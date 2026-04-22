@@ -1,0 +1,185 @@
+---
+title: "POST /place-order: Place a Gift Card Order"
+description: "API reference for placing a gift card order via Plum. Accepts product ID, denomination, recipient details, and returns order confirmation."
+sidebarTitle: "Place Order"
+---
+
+The Place Order endpoint lets you submit a gift card order programmatically. On success, the response contains the voucher code, URL, or PIN the recipient needs to redeem the gift card. For real-time products, Plum fulfills the order and returns the voucher details in the same response. For non-real-time products, the order is placed in a pending state and fulfilled asynchronously—use [webhooks](/api-reference/gift-cards/webhooks) to receive a notification when the voucher is ready.
+
+**Endpoint:** `POST /v1/oauth/api/place-order`
+
+**Production URL:** `https://accounts.xoxoday.com/chef/v1/oauth/api/place-order`
+
+**Sandbox URL:** `https://canvas.xoxoday.com/chef/v1/oauth/api/place-order`
+
+<Note>
+  Pass a unique `poNumber` with every order. If you receive a `5xx` error, call `GET /get-order-details` with the same `poNumber` before retrying—do not generate a new `poNumber` unless you have confirmed no order was created.
+</Note>
+
+## Request headers
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| `Authorization` | Yes | `Bearer YOUR_ACCESS_TOKEN` |
+| `X-Api-Key` | Yes | Your Client ID |
+| `X-Secret-Key` | Yes | Your Secret ID |
+| `Content-Type` | Yes | `application/json` |
+
+## Request body parameters
+
+<ParamField body="productId" type="string" required>
+  The unique identifier of the gift card product. Obtain this from `GET /get-vouchers`.
+</ParamField>
+
+<ParamField body="quantity" type="integer" required>
+  Number of vouchers to order. The maximum allowed quantity per order is 10 for most products. Check the `orderQuantityLimit` field in the `GET /get-vouchers` response for product-specific limits.
+</ParamField>
+
+<ParamField body="denomination" type="number" required>
+  Face value of each voucher. Must be a valid denomination for the selected product as returned by `GET /get-vouchers`.
+</ParamField>
+
+<ParamField body="poNumber" type="string" required>
+  Your unique purchase order reference. Use a UUID or a globally unique identifier. This value is your idempotency key—store it alongside the returned `orderID`.
+</ParamField>
+
+<ParamField body="notifyReceiverEmail" type="integer">
+  Set to `1` to send the voucher to the recipient via email. Set to `0` (default) to skip email notification.
+</ParamField>
+
+<ParamField body="email" type="string">
+  Recipient email address. Required when `notifyReceiverEmail` is `1`.
+</ParamField>
+
+<ParamField body="name" type="string">
+  Recipient's full name. Used in the delivery email when `notifyReceiverEmail` is `1`.
+</ParamField>
+
+<ParamField body="phoneNumber" type="string">
+  Recipient's phone number. Required for products where `isPhoneNumberMandatory` is `true` in the `GET /get-vouchers` response.
+</ParamField>
+
+<ParamField body="message" type="string">
+  Optional personal message to include in the delivery email.
+</ParamField>
+
+## Example request
+
+```bash
+curl -X POST https://accounts.xoxoday.com/chef/v1/oauth/api/place-order \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "X-Api-Key: YOUR_CLIENT_ID" \
+  -H "X-Secret-Key: YOUR_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "productId": "PROD_001",
+    "quantity": 1,
+    "denomination": 25,
+    "poNumber": "a3f4b2c1-9d8e-4f6a-b7c2-1e3d5a9b8c7f",
+    "notifyReceiverEmail": 1,
+    "email": "recipient@example.com",
+    "name": "Jane Smith",
+    "message": "Congratulations on your achievement!"
+  }'
+```
+
+## Example response
+
+```json
+{
+  "status": 1,
+  "message": "Order placed successfully",
+  "data": {
+    "orderId": "ORD_20240101_001",
+    "poNumber": "a3f4b2c1-9d8e-4f6a-b7c2-1e3d5a9b8c7f",
+    "orderStatus": "completed",
+    "deliveryStatus": "Delivered",
+    "vouchers": [
+      {
+        "voucherCode": "GIFT1234ABCD",
+        "pin": "",
+        "type": "code",
+        "validity": "2025-12-31",
+        "productName": "Amazon Gift Card",
+        "denomination": 25,
+        "currency": "USD"
+      }
+    ],
+    "totalAmount": 25,
+    "currency": "USD",
+    "exchangeRate": 1.0,
+    "createdAt": "2024-01-01T10:00:00.000Z"
+  }
+}
+```
+
+## Response fields
+
+<ResponseField name="status" type="integer">
+  `1` for success, `0` for failure.
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Human-readable description of the result.
+</ResponseField>
+
+<ResponseField name="data.orderId" type="string">
+  Plum's unique order identifier. Store this value for tracking and reconciliation.
+</ResponseField>
+
+<ResponseField name="data.poNumber" type="string">
+  The purchase order number you provided in the request, echoed back for confirmation.
+</ResponseField>
+
+<ResponseField name="data.orderStatus" type="string">
+  Always `completed` when a response is returned.
+</ResponseField>
+
+<ResponseField name="data.deliveryStatus" type="string">
+  Current delivery state: `Delivered`, `Pending`, or `Canceled`.
+</ResponseField>
+
+<ResponseField name="data.vouchers" type="array">
+  Array of voucher objects. Each object contains the redemption details for one gift card unit.
+</ResponseField>
+
+<ResponseField name="data.vouchers[].voucherCode" type="string">
+  The voucher code, PIN, or URL depending on the product's delivery `type`. For `code` type, this is the redemption code. For `url` type, this is a redemption URL. For `codePin` or `urlPin` types, see the `pin` field.
+</ResponseField>
+
+<ResponseField name="data.vouchers[].pin" type="string">
+  PIN value, populated only for `codePin` and `urlPin` product types.
+</ResponseField>
+
+<ResponseField name="data.vouchers[].type" type="string">
+  Voucher delivery type: `code`, `codePin`, `url`, or `urlPin`.
+</ResponseField>
+
+<ResponseField name="data.vouchers[].validity" type="string">
+  Expiry date of the voucher in `YYYY-MM-DD` format.
+</ResponseField>
+
+<ResponseField name="data.totalAmount" type="number">
+  Total amount charged to your wallet for this order, in your account's base currency.
+</ResponseField>
+
+<ResponseField name="data.exchangeRate" type="number">
+  The exchange rate applied to this order if a currency conversion was required.
+</ResponseField>
+
+## Voucher delivery types
+
+Gift cards are delivered in one of four formats depending on the product:
+
+| Type | Redemption method |
+|------|------------------|
+| `code` | Use the `voucherCode` value alone at the merchant's website |
+| `codePin` | Use both the `voucherCode` and `pin` values at the merchant's website |
+| `url` | Open the URL in `voucherCode` to access the gift card |
+| `urlPin` | Open the URL and also enter the `pin` when prompted |
+
+## Implementation notes
+
+- The maximum response time for real-time products is **120 seconds**. Design your integration to handle this timeout gracefully.
+- Store the full request and response JSON for every `place-order` call. This is critical for audit trails and resolving any fulfillment disputes.
+- If `deliveryStatus` is `Pending`, set up [webhooks](/api-reference/gift-cards/webhooks) to receive a notification when the order is fulfilled.

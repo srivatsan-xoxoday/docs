@@ -1,0 +1,213 @@
+---
+title: "Reports and Analytics Dashboard"
+description: "Explore all reporting types in Plum: API usage, reward code and link reports, integration reports, and payment and wallet reports."
+---
+
+Plum's reporting section gives you visibility into every layer of your rewards program—from API transaction logs and campaign delivery to wallet movements and integration health. All reports are accessible from the **Reports** item in the main dashboard navigation, and most can be filtered, column-customized, and downloaded as a spreadsheet.
+
+<Tip>
+  Review your reports regularly to identify low redemption rates, delivery failures, or budget variances early. Catching these signals quickly lets you optimize campaigns before they end.
+</Tip>
+
+<Note>
+  Super Admins can access all report types. Admins can only view reports for the rewards they personally sent. Company-level financial reports are restricted to Super Admins.
+</Note>
+
+## Report types overview
+
+<CardGroup cols={2}>
+  <Card title="Rewards API Report" icon="code">
+    Track gift card orders placed through the Plum API, including order status, amounts, and recipient details.
+  </Card>
+
+  <Card title="Reward Code Report" icon="ticket">
+    Monitor all reward codes generated, distributed, and redeemed, with per-recipient delivery and communication activity.
+  </Card>
+
+  <Card title="Reward Link Report" icon="link">
+    Analyze reward link delivery, click-through rates, redemption status, and engagement for each recipient.
+  </Card>
+
+  <Card title="Reward Points Report" icon="star">
+    View reward point transactions by recipient, campaign, and time period, and track Email and SMS delivery activity.
+  </Card>
+
+  <Card title="Integration Report" icon="plug">
+    Monitor sync status between Plum and connected external systems, and troubleshoot data synchronization issues.
+  </Card>
+
+  <Card title="Payment and Wallet Report" icon="wallet">
+    Review all wallet recharges, withdrawals, and payment transactions with invoice details, amounts, and balances.
+  </Card>
+</CardGroup>
+
+## Rewards API report (gift cards)
+
+The Rewards API report covers every gift card order processed through the Plum API. Use it to verify order fulfillment, audit recipient delivery, and investigate failed transactions.
+
+### Access the report
+
+<Steps>
+  <Step title="Navigate to Reports">
+    Click **Reports** in the main dashboard navigation.
+  </Step>
+  <Step title="Select Gift Cards">
+    Within the Reports section, click **Gift Card**. Use the **Sent Date UTC** selector to choose your date range.
+  </Step>
+  <Step title="Review transaction data">
+    The report displays the following fields for each order:
+
+    - Order ID
+    - Product Name and Product ID
+    - Recipient Email
+    - Currency and Denomination
+    - Date with Timestamp
+    - Amount Charged
+    - Status
+    - Actions
+  </Step>
+</Steps>
+
+### Filter and customize columns
+
+- Click the **filter icon** to narrow results by Order ID, Recipient Email, Sent Date, Delivered Date, Status, PO Number, or Tag.
+- Click the **Columns icon** (|||) to show or hide specific columns.
+- Click **Download** in the top-right corner to export the report.
+
+## Reward code report
+
+The Reward Code report shows every code generated and sent through your campaigns, along with delivery and redemption status for each recipient.
+
+### Access the report
+
+<Steps>
+  <Step title="Navigate to Reports">
+    Click **Reports** in the main dashboard navigation.
+  </Step>
+  <Step title="Select Reward Code">
+    Click the **Reward Code** tab. The report shows Unique ID, Payment Reference ID, Recipient Name, Recipient Email, and other transaction details.
+  </Step>
+  <Step title="Download the report">
+    Click **Download** in the top-right corner to export. Use **Sent Date UTC** to set your date range before exporting.
+  </Step>
+</Steps>
+
+### Track email and SMS delivery activity
+
+<Steps>
+  <Step title="Open the three-dot menu">
+    In the Reward Code report, click the **three dots icon** next to the transaction you want to inspect.
+  </Step>
+  <Step title="View the activity timeline">
+    Click **View Details**, then use the dropdown to select **Activity Timeline**. This shows the full Email and SMS delivery history for that code.
+  </Step>
+</Steps>
+
+### Filter and customize columns
+
+- Click the **filter icon** to apply filters across the report.
+- Click the **Columns icon** (|||) to configure which columns are visible.
+
+## Reward link report
+
+The Reward Link report tracks the lifecycle of each reward link—from generation and delivery through to redemption.
+
+### Access the report
+
+<Steps>
+  <Step title="Navigate to Reports > Reward Link">
+    Click **Reports** in the main dashboard navigation, then click **Reward Link**.
+  </Step>
+  <Step title="Review link data">
+    The report includes Recipient Name, Recipient Email, date of delivery, campaign details, and redemption status.
+  </Step>
+  <Step title="Set a date range and download">
+    Click **Sent Date (UTC)** to choose a time range, then click the **Download** button to export.
+  </Step>
+</Steps>
+
+### Filter options
+
+Use the filter icon to narrow the report by:
+
+- Unique ID
+- Payment Reference ID
+- Recipient Name or Phone
+- Sent Date (UTC) and Redemption Date (UTC)
+- Status
+- Campaign
+- Batch ID
+
+### Manage columns
+
+Click the **Columns icon** (|||) to check or uncheck the columns you want to display.
+
+## Reward points report
+
+The Reward Points report covers all point-based transactions. It lives within the wallet history section and supports the same filtering and download capabilities as other reports.
+
+### Access the report
+
+<Steps>
+  <Step title="Navigate to Reports">
+    Click **Reports** in the main dashboard navigation.
+  </Step>
+  <Step title="Select Reward Points">
+    Click **Reward Points** (found under **Wallet History**).
+  </Step>
+  <Step title="Filter and download">
+    Use filters for Recipient Name, Email, Batch ID, Phone Number, or date range. Click **Download** to export.
+  </Step>
+</Steps>
+
+### Track email and SMS delivery activity
+
+<Steps>
+  <Step title="Open the three-dot menu">
+    Navigate to **Reports \> Wallet History \> Reward Points**, then click the **three dots icon** next to the transaction.
+  </Step>
+  <Step title="View the activity timeline">
+    Click **Take Action**, then select **Activity Timeline** from the dropdown to see per-recipient Email and SMS delivery logs.
+  </Step>
+</Steps>
+
+## Integration report
+
+The Integration report gives you visibility into how Plum is syncing data with your connected external tools (CRM, HRMS, survey platforms, and others).
+
+Use this report to:
+
+- Check the current sync status of each integration.
+- Identify records that failed to sync and understand why.
+- Confirm that reward triggers fired correctly from your connected platform.
+
+To access it, click **Reports** in the main navigation and select **Integrations**.
+
+## Payment and wallet report
+
+The Payment and Wallet report provides a full audit trail of all financial activity on your account, including wallet recharges, reward spend, and current balance.
+
+### Access the report
+
+<Steps>
+  <Step title="Open the Wallet section">
+    Click the **Wallet icon** in the main navigation menu.
+  </Step>
+  <Step title="View transaction history">
+    Click **Transaction History** to open the payment report view.
+  </Step>
+  <Step title="Review payment details">
+    Each entry shows the invoice date, transaction amount, recharge source, current balance, and payment status.
+  </Step>
+  <Step title="Export the report">
+    Click **Download** in the top-right corner. You can also export to Excel and have it sent to your email address.
+  </Step>
+</Steps>
+
+### Filter the payment report
+
+Use the filter controls to narrow transactions by date range, transaction type, or payment status. This is particularly useful when reconciling a specific billing period or investigating an individual transaction.
+
+<Info>
+  Super Admins can access all payment and wallet reports. Admins only see activity related to rewards they personally sent. Company-level balance and recharge history is visible to Super Admins only.
+</Info>

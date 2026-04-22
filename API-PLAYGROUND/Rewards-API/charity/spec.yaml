@@ -1,0 +1,804 @@
+openapi: 3.0.3
+
+info:
+  title: Xoxoday Rewards API – Charity
+  version: "1.2"
+  description: |
+    Charity API endpoints for browsing the charity catalog, placing orders, and reporting.
+
+    All operations dispatch to `POST /v1/oauth/api`. Virtual path suffixes are used
+    for playground differentiation since OpenAPI does not allow multiple POST operations
+    on the same path.
+
+    **Host split:**
+    - `getFilters`, `getBalance`, `paymentHistory` → `stagingstores.xoxoday.com`
+    - `getCharity`, `placeOrder`, `getOrderDetails`, `getOrderHistory` → `accounts.xoxoday.com`
+
+servers:
+  - url: https://stagingstores.xoxoday.com/chef/v1/oauth/api
+    description: Sandbox
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Catalog
+  - name: Orders
+  - name: Reporting
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: "`Authorization: Bearer <access_token>`"
+
+  schemas:
+    OrderHistoryItem:
+      type: object
+      properties:
+        orderId: { type: number }
+        orderDate: { type: string }
+        email: { type: string }
+        deliveryStatus: { type: string }
+        poNumber: { type: string }
+        tag: { type: string, nullable: true }
+        orderTotal: { type: number }
+        rawOrderTotal: { type: number, nullable: true }
+        orderDiscount: { type: number }
+        rawOrderDiscount: { type: number, nullable: true }
+        discountPercent: { type: number }
+        amountCharged: { type: number }
+        currencyValue: { type: number }
+        currencyCode: { type: string }
+        products:
+          type: array
+          items:
+            type: object
+            properties:
+              productId: { type: number }
+              productName: { type: string }
+              receiverEmail: { type: string }
+              price: { type: number }
+              quantity: { type: number }
+              orderProductStatus: { type: string }
+              currency: { type: string }
+        voucherDetails:
+          type: array
+          items:
+            type: object
+            properties:
+              orderId: { type: number }
+              productId: { type: number }
+              productName: { type: string }
+              currencyCode: { type: string }
+              productStatus: { type: string }
+              denomination: { type: number }
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid access token.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string, example: Unauthorized }
+    BadRequest:
+      description: Invalid request body or parameters.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string }
+              message: { type: string }
+    BadGateway:
+      description: Upstream service error.
+
+paths:
+
+  # ── Get Filters API ───────────────────────────────────────────────────────────
+  # Real URL: POST https://stagingstores.xoxoday.com/chef/v1/oauth/api
+  # Note: variables use a "data" wrapper here (unlike Lounge/Airmiles which are flat).
+
+  /getFilters:
+    post:
+      operationId: charityGetFilters
+      summary: Get Filters API
+      description: >
+        Retrieve available filters for the charity catalog. Pass empty values to
+        get all filters. `includeFilters` and `excludeFilters` only take effect
+        when `filterGroupCode` is also provided.
+
+
+        **Real URL:** `POST https://stagingstores.xoxoday.com/chef/v1/oauth/api`
+      tags: [Catalog]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  enum: [plumProAPI.mutation.getFilters]
+                  default: plumProAPI.mutation.getFilters
+                tag:
+                  type: string
+                  enum: [plumProAPI]
+                  default: plumProAPI
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        filterGroupCode:
+                          type: string
+                          description: "Filter category (e.g. `Country`, `price`, `currency`)."
+                          example: Country
+                        includeFilters:
+                          type: string
+                          description: Filters to explicitly include.
+                          example: usa
+                        excludeFilters:
+                          type: string
+                          description: Filters to explicitly exclude.
+                          example: uae
+            example:
+              query: plumProAPI.mutation.getFilters
+              tag: plumProAPI
+              variables:
+                data:
+                  filterGroupCode: Country
+                  includeFilters: usa
+                  excludeFilters: uae
+      responses:
+        "200":
+          description: Filter list returned successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      getFilters:
+                        type: object
+                        properties:
+                          status: { type: number }
+                          data:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                filterGroupName: { type: string }
+                                filterGroupDescription: { type: string }
+                                filterGroupCode: { type: string }
+                                filters:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      filterValue: { type: string }
+                                      isoCode: { type: string }
+                                      filterValueCode: { type: string }
+              example:
+                data:
+                  getFilters:
+                    status: 1
+                    data:
+                      - filterGroupName: Country
+                        filterGroupDescription: Filter by country
+                        filterGroupCode: country
+                        filters:
+                          - filterValue: United States
+                            isoCode: US
+                            filterValueCode: usa
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ── Get Balance API ───────────────────────────────────────────────────────────
+  # Real URL: POST https://stagingstores.xoxoday.com/chef/v1/oauth/api
+  # Sent as JSON body (not URL query string like Lounge/Airmiles).
+
+  /getBalance:
+    post:
+      operationId: charityGetBalance
+      summary: Get Balance API
+      description: >
+        Fetch the available balance in your Admin wallet.
+
+
+        **Real URL:** `POST https://stagingstores.xoxoday.com/chef/v1/oauth/api`
+      tags: [Catalog]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  enum: [plumProAPI.query.getBalance]
+                  default: plumProAPI.query.getBalance
+                tag:
+                  type: string
+                  enum: [plumProAPI]
+                  default: plumProAPI
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      type: object
+                      description: Pass an empty object `{}`.
+            example:
+              query: plumProAPI.query.getBalance
+              tag: plumProAPI
+              variables:
+                data: {}
+      responses:
+        "200":
+          description: Balance fetched successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      getBalance:
+                        type: object
+                        properties:
+                          status: { type: number, description: "`1` = success." }
+                          data:
+                            type: object
+                            properties:
+                              value: { type: number, description: Available balance. }
+                              currency: { type: string, description: "Currency code (e.g. `USD`)." }
+              example:
+                data:
+                  getBalance:
+                    status: 1
+                    data:
+                      value: 5000
+                      currency: USD
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ── Get Charity API ───────────────────────────────────────────────────────────
+  # Real URL: POST https://accounts.xoxoday.com/chef/v1/oauth/api
+  # No categoryType filter needed.
+
+  /getCharity:
+    post:
+      operationId: charityGetCatalog
+      summary: Get Charity API
+      description: >
+        Fetch a paginated list of available charity organizations from the catalog.
+        Pass `"exchangeRate": 1` to include FX rates in the response.
+
+
+        **Real URL:** `POST https://accounts.xoxoday.com/chef/v1/oauth/api`
+      tags: [Catalog]
+      servers:
+        - url: https://accounts.xoxoday.com/chef/v1/oauth/api
+          description: Production
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  enum: [plumProAPI.mutation.getVouchers]
+                  default: plumProAPI.mutation.getVouchers
+                tag:
+                  type: string
+                  enum: [plumProAPI]
+                  default: plumProAPI
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        limit:
+                          type: integer
+                          description: Number of results per page.
+                          example: 10
+                        page:
+                          type: integer
+                          description: Page number to fetch.
+                          example: 1
+                        exchangeRate:
+                          type: integer
+                          description: Pass `1` to include FX exchange rates.
+                          example: 1
+                        sort:
+                          type: object
+                          properties:
+                            field:
+                              type: string
+                              example: name
+                            order:
+                              type: string
+                              enum: [ASC, DESC]
+                              example: ASC
+                        filters:
+                          type: array
+                          description: List of filter objects.
+                          items:
+                            type: object
+                            properties:
+                              key: { type: string }
+                              value: { type: string }
+            example:
+              query: plumProAPI.mutation.getVouchers
+              tag: plumProAPI
+              variables:
+                data:
+                  limit: 10
+                  page: 1
+                  exchangeRate: 1
+                  sort:
+                    field: name
+                    order: ASC
+      responses:
+        "200":
+          description: Charity catalog returned successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      getVouchers:
+                        type: object
+                        properties:
+                          status: { type: number }
+                          data:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                productId: { type: number }
+                                name: { type: string }
+                                description: { type: string }
+                                orderQuantityLimit: { type: number }
+                                imageUrl: { type: string }
+                                currencyCode: { type: string }
+                                countryName: { type: string }
+                                valueType: { type: string }
+                                maxValue: { type: number }
+                                minValue: { type: number }
+                                valueDenominations: { type: string }
+                                fee: { type: number }
+                                discount: { type: number }
+                                exchangeRate: { type: number }
+                                isPhoneNumberMandatory: { type: boolean }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ── Place Order API ───────────────────────────────────────────────────────────
+  # Real URL: POST https://accounts.xoxoday.com/chef/v1/oauth/api
+
+  /placeOrder:
+    post:
+      operationId: charityPlaceOrder
+      summary: Place Order API
+      description: >
+        Place a charity donation order. A unique `poNumber` must be sent per order.
+
+
+        **Real URL:** `POST https://accounts.xoxoday.com/chef/v1/oauth/api`
+      tags: [Orders]
+      servers:
+        - url: https://accounts.xoxoday.com/chef/v1/oauth/api
+          description: Production
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  enum: [plumProAPI.mutation.placeOrder]
+                  default: plumProAPI.mutation.placeOrder
+                tag:
+                  type: string
+                  enum: [plumProAPI]
+                  default: plumProAPI
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      type: object
+                      required: [productId, quantity, denomination, poNumber]
+                      properties:
+                        productId:
+                          type: integer
+                          description: Charity product ID to order.
+                          example: 15365
+                        quantity:
+                          type: integer
+                          description: Number of units to order.
+                          example: 1
+                        denomination:
+                          type: number
+                          description: Donation amount.
+                          example: 20
+                        email:
+                          type: string
+                          format: email
+                          description: Donor's email address.
+                          example: your.email@example.com
+                        contact:
+                          type: string
+                          description: Donor's contact number.
+                          example: "+1-4705000000"
+                        tag:
+                          type: string
+                          description: Optional tag for internal tracking.
+                          example: Rewarding
+                        poNumber:
+                          type: string
+                          description: Client-generated PO number — must be unique per order.
+                          example: PO12662
+                        notifyReceiverEmail:
+                          type: integer
+                          enum: [0, 1]
+                          description: "`1` = notify recipient via email."
+                          example: 0
+                        notifyAdminEmail:
+                          type: integer
+                          enum: [0, 1]
+                          description: "`1` = notify admin via email."
+                          example: 0
+            example:
+              query: plumProAPI.mutation.placeOrder
+              tag: plumProAPI
+              variables:
+                data:
+                  productId: 15365
+                  quantity: 1
+                  denomination: 20
+                  email: your.email@example.com
+                  contact: "+1-4705000000"
+                  tag: Rewarding
+                  poNumber: PO12662
+                  notifyReceiverEmail: 0
+                  notifyAdminEmail: 0
+      responses:
+        "200":
+          description: Charity order placed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      placeOrder:
+                        type: object
+                        properties:
+                          status: { type: number }
+                          data:
+                            type: object
+                            properties:
+                              orderId: { type: number }
+                              orderTotal: { type: number }
+                              orderDiscount: { type: string }
+                              discountPercent: { type: string }
+                              currencyCode: { type: string }
+                              currencyValue: { type: number }
+                              amountCharged: { type: number }
+                              orderStatus: { type: string }
+                              deliveryStatus: { type: string }
+                              tag: { type: string }
+                              quantity: { type: number }
+                              voucherDetails:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    orderId: { type: number }
+                                    productId: { type: number }
+                                    productName: { type: string }
+                                    currencyCode: { type: string }
+                                    productStatus: { type: string }
+                                    denomination: { type: number }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ── Get Order Details API ─────────────────────────────────────────────────────
+  # Real URL: POST https://accounts.xoxoday.com/chef/v1/oauth/api
+
+  /getOrderDetails:
+    post:
+      operationId: charityGetOrderDetails
+      summary: Get Order Details API
+      description: >
+        Fetch details for a specific charity order using either `poNumber` or `orderId`.
+
+
+        **Real URL:** `POST https://accounts.xoxoday.com/chef/v1/oauth/api`
+      tags: [Orders]
+      servers:
+        - url: https://accounts.xoxoday.com/chef/v1/oauth/api
+          description: Production
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  enum: [plumProAPI.mutation.getOrderDetails]
+                  default: plumProAPI.mutation.getOrderDetails
+                tag:
+                  type: string
+                  enum: [plumProAPI]
+                  default: plumProAPI
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        poNumber:
+                          type: string
+                          description: PO number passed at order time. Use this OR `orderId`.
+                          example: PO123
+                        orderId:
+                          type: integer
+                          nullable: true
+                          description: Order ID. Pass `0` or `null` when using `poNumber`.
+                          example: 123
+                        sendMailToReceiver:
+                          type: integer
+                          enum: [0, 1]
+                          description: "`1` = resend delivery email to recipient."
+                          example: 0
+            example:
+              query: plumProAPI.mutation.getOrderDetails
+              tag: plumProAPI
+              variables:
+                data:
+                  poNumber: PO123
+                  orderId: 123
+                  sendMailToReceiver: 0
+      responses:
+        "200":
+          description: Order details returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      getOrderDetails:
+                        type: object
+                        properties:
+                          status: { type: number }
+                          data:
+                            type: object
+                            properties:
+                              orderId: { type: number }
+                              orderTotal: { type: number }
+                              orderDiscount: { type: string }
+                              currencyCode: { type: string }
+                              amountCharged: { type: number }
+                              orderStatus: { type: string }
+                              deliveryStatus: { type: string }
+                              orderDate: { type: string }
+                              quantity: { type: number }
+                              voucherDetails:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    orderId: { type: number }
+                                    productId: { type: number }
+                                    productName: { type: string }
+                                    currencyCode: { type: string }
+                                    productStatus: { type: string }
+                                    denomination: { type: number }
+                                    cancelledQuantity: { type: number }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ── Get Order History API ─────────────────────────────────────────────────────
+  # Real URL: POST https://accounts.xoxoday.com/chef/v1/oauth/api
+
+  /getOrderHistory:
+    post:
+      operationId: charityGetOrderHistory
+      summary: Get Order History API
+      description: >
+        Fetch historical charity orders within a date range.
+
+
+        **Real URL:** `POST https://accounts.xoxoday.com/chef/v1/oauth/api`
+      tags: [Orders]
+      servers:
+        - url: https://accounts.xoxoday.com/chef/v1/oauth/api
+          description: Production
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  enum: [plumProAPI.mutation.getOrderHistory]
+                  default: plumProAPI.mutation.getOrderHistory
+                tag:
+                  type: string
+                  enum: [plumProAPI]
+                  default: plumProAPI
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        startDate:
+                          type: string
+                          description: "Start date. Format: `YYYY-MM-DD`."
+                          example: "2012-07-25"
+                        endDate:
+                          type: string
+                          description: "End date. Format: `YYYY-MM-DD`."
+                          example: "2012-07-28"
+                        limit:
+                          type: integer
+                          description: Number of records per page.
+                          example: 10
+                        page:
+                          type: integer
+                          description: Page number.
+                          example: 1
+            example:
+              query: plumProAPI.mutation.getOrderHistory
+              tag: plumProAPI
+              variables:
+                data:
+                  startDate: "2012-07-25"
+                  endDate: "2012-07-28"
+                  limit: 10
+                  page: 1
+      responses:
+        "200":
+          description: Order history returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      getOrderHistory:
+                        type: object
+                        properties:
+                          status: { type: number }
+                          data:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/OrderHistoryItem'
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ── Get Payment Report API ────────────────────────────────────────────────────
+  # Real URL: POST https://stagingstores.xoxoday.com/chef/v1/oauth/api
+  # Uses top-level "data" key (flat) — not "variables".
+
+  /paymentHistory:
+    post:
+      operationId: charityPaymentHistory
+      summary: Get Payment Report API
+      description: >
+        Fetch payment/transaction history within a date range.
+
+
+        **Note:** This endpoint uses a top-level `"data"` key instead of `"variables"`.
+        Fields are passed directly under `data`.
+
+
+        **Real URL:** `POST https://stagingstores.xoxoday.com/chef/v1/oauth/api`
+      tags: [Reporting]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, data]
+              properties:
+                query:
+                  type: string
+                  enum: [plumProAPI.mutation.paymentHistory]
+                  default: plumProAPI.mutation.paymentHistory
+                tag:
+                  type: string
+                  enum: [plumProAPI]
+                  default: plumProAPI
+                data:
+                  type: object
+                  properties:
+                    startDate:
+                      type: string
+                      description: "Start date. Format: `YYYY-MM-DD`."
+                      example: "2024-01-01"
+                    endDate:
+                      type: string
+                      description: "End date. Format: `YYYY-MM-DD`."
+                      example: "2024-01-30"
+                    limit:
+                      type: integer
+                      description: Number of entries to return.
+                      example: 100
+                    page:
+                      type: integer
+                      description: Page number for pagination.
+                      example: 1
+            example:
+              query: plumProAPI.mutation.paymentHistory
+              tag: plumProAPI
+              data:
+                startDate: "2024-01-01"
+                endDate: "2024-01-30"
+                limit: 100
+                page: 1
+      responses:
+        "200":
+          description: Payment report returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      invoice_number: { type: integer, description: Unique invoice number. }
+                      reference_id: { type: integer, description: Order reference ID. }
+                      date: { type: string, description: Transaction date. }
+                      reason: { type: string, description: "Reason (e.g. Funds added, Refunded, Brand Voucher Issued)." }
+                      adjusted_amount: { type: integer, description: Amount added or deducted. }
+                      closing_balance: { type: integer, description: Closing balance after the transaction. }
+                      transaction_status: { type: string, description: "`Cancelled` or `Complete`." }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }

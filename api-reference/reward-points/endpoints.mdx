@@ -1,0 +1,247 @@
+---
+title: "Reward Points API Endpoints Reference"
+description: "Reference for Plum Reward Points API endpoints: create user token, fetch points balance, and send points to users."
+sidebarTitle: "Endpoints"
+---
+
+The Reward Points API exposes three endpoints for managing points balances and distributions. All endpoints require a valid Bearer token in the `Authorization` header along with your Client ID and Secret ID. Use your company access token for the `create-user-token` endpoint, and use the resulting user token for `fetch-points` and `send-points` operations.
+
+---
+
+## POST /create-user-token
+
+Creates a user-scoped access token from your company token. Use this user token for all subsequent `fetch-points` and `send-points` calls on behalf of a specific user.
+
+**Production URL:** `https://accounts.xoxoday.com/chef/v1/oauth/api/create-user-token`
+
+**Sandbox URL:** `https://canvas.xoxoday.com/chef/v1/oauth/api/create-user-token`
+
+### Request headers
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| `Authorization` | Yes | `Bearer YOUR_COMPANY_ACCESS_TOKEN` |
+| `X-Api-Key` | Yes | Your Client ID |
+| `X-Secret-Key` | Yes | Your Secret ID |
+| `Content-Type` | Yes | `application/json` |
+
+### Request body parameters
+
+<ParamField body="userId" type="string" required>
+  The unique identifier of the user in your system for whom you want to create a token.
+</ParamField>
+
+<ParamField body="email" type="string" required>
+  The email address associated with the user's Plum account.
+</ParamField>
+
+### Example request
+
+```bash
+curl -X POST https://accounts.xoxoday.com/chef/v1/oauth/api/create-user-token \
+  -H "Authorization: Bearer YOUR_COMPANY_ACCESS_TOKEN" \
+  -H "X-Api-Key: YOUR_CLIENT_ID" \
+  -H "X-Secret-Key: YOUR_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": "user_001",
+    "email": "jane@yourcompany.com"
+  }'
+```
+
+### Example response
+
+```json
+{
+  "status": 1,
+  "message": "User token created successfully",
+  "data": {
+    "userToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "tokenExpiry": 1692265307092,
+    "userId": "user_001"
+  }
+}
+```
+
+### Response fields
+
+<ResponseField name="status" type="integer">
+  `1` for success, `0` for failure.
+</ResponseField>
+
+<ResponseField name="data.userToken" type="string">
+  The user-scoped access token. Use this token as the Bearer token in `fetch-points` and `send-points` requests for this user.
+</ResponseField>
+
+<ResponseField name="data.tokenExpiry" type="integer">
+  Unix timestamp (milliseconds) when the user token expires.
+</ResponseField>
+
+<ResponseField name="data.userId" type="string">
+  The user identifier echoed back from the request.
+</ResponseField>
+
+---
+
+## GET /fetch-points
+
+Retrieves the current Plum Points balance for the authenticated user.
+
+**Production URL:** `https://accounts.xoxoday.com/chef/v1/oauth/api/fetch-points`
+
+**Sandbox URL:** `https://canvas.xoxoday.com/chef/v1/oauth/api/fetch-points`
+
+### Request headers
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| `Authorization` | Yes | `Bearer USER_TOKEN` (obtained from `create-user-token`) |
+| `X-Api-Key` | Yes | Your Client ID |
+| `X-Secret-Key` | Yes | Your Secret ID |
+
+### Example request
+
+```bash
+curl -X GET https://accounts.xoxoday.com/chef/v1/oauth/api/fetch-points \
+  -H "Authorization: Bearer USER_TOKEN" \
+  -H "X-Api-Key: YOUR_CLIENT_ID" \
+  -H "X-Secret-Key: YOUR_CLIENT_SECRET"
+```
+
+### Example response
+
+```json
+{
+  "status": 1,
+  "message": "Points fetched successfully",
+  "data": {
+    "userId": "user_001",
+    "pointsBalance": 1500,
+    "currency": "USD",
+    "lastUpdated": "2024-01-01T10:00:00.000Z"
+  }
+}
+```
+
+### Response fields
+
+<ResponseField name="status" type="integer">
+  `1` for success, `0` for failure.
+</ResponseField>
+
+<ResponseField name="data.userId" type="string">
+  The user identifier for whom the balance was retrieved.
+</ResponseField>
+
+<ResponseField name="data.pointsBalance" type="integer">
+  The user's current Plum Points balance.
+</ResponseField>
+
+<ResponseField name="data.currency" type="string">
+  The currency in which the points balance is denominated.
+</ResponseField>
+
+<ResponseField name="data.lastUpdated" type="string">
+  ISO 8601 timestamp of when the balance was last updated.
+</ResponseField>
+
+---
+
+## POST /send-points
+
+Sends Plum Points from your company account to a specific user. Points are deducted from your company wallet and credited to the recipient user.
+
+**Production URL:** `https://accounts.xoxoday.com/chef/v1/oauth/api/send-points`
+
+**Sandbox URL:** `https://canvas.xoxoday.com/chef/v1/oauth/api/send-points`
+
+### Request headers
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| `Authorization` | Yes | `Bearer YOUR_COMPANY_ACCESS_TOKEN` |
+| `X-Api-Key` | Yes | Your Client ID |
+| `X-Secret-Key` | Yes | Your Secret ID |
+| `Content-Type` | Yes | `application/json` |
+
+### Request body parameters
+
+<ParamField body="recipientUserId" type="string" required>
+  The unique identifier of the user who will receive the points.
+</ParamField>
+
+<ParamField body="recipientEmail" type="string" required>
+  The email address of the recipient user in the Plum system.
+</ParamField>
+
+<ParamField body="points" type="integer" required>
+  The number of Plum Points to send. Must be a positive integer.
+</ParamField>
+
+<ParamField body="referenceId" type="string" required>
+  A unique reference identifier for this transaction. Use a UUID to ensure idempotency. Store this value alongside the returned transaction ID.
+</ParamField>
+
+<ParamField body="note" type="string">
+  Optional message or reason for sending points. Visible to the recipient.
+</ParamField>
+
+### Example request
+
+```bash
+curl -X POST https://accounts.xoxoday.com/chef/v1/oauth/api/send-points \
+  -H "Authorization: Bearer YOUR_COMPANY_ACCESS_TOKEN" \
+  -H "X-Api-Key: YOUR_CLIENT_ID" \
+  -H "X-Secret-Key: YOUR_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "recipientUserId": "user_001",
+    "recipientEmail": "jane@yourcompany.com",
+    "points": 500,
+    "referenceId": "ref-uuid-1234-5678",
+    "note": "Q4 performance award"
+  }'
+```
+
+### Example response
+
+```json
+{
+  "status": 1,
+  "message": "Points sent successfully",
+  "data": {
+    "transactionId": "TXN_20240101_001",
+    "referenceId": "ref-uuid-1234-5678",
+    "recipientUserId": "user_001",
+    "pointsSent": 500,
+    "remainingBalance": 9500,
+    "timestamp": "2024-01-01T10:00:00.000Z"
+  }
+}
+```
+
+### Response fields
+
+<ResponseField name="status" type="integer">
+  `1` for success, `0` for failure.
+</ResponseField>
+
+<ResponseField name="data.transactionId" type="string">
+  Plum's unique identifier for this points transfer transaction.
+</ResponseField>
+
+<ResponseField name="data.referenceId" type="string">
+  The reference ID you provided, echoed back for confirmation.
+</ResponseField>
+
+<ResponseField name="data.pointsSent" type="integer">
+  Number of points successfully transferred to the recipient.
+</ResponseField>
+
+<ResponseField name="data.remainingBalance" type="integer">
+  Your company account's remaining Plum Points balance after this transfer.
+</ResponseField>
+
+<ResponseField name="data.timestamp" type="string">
+  ISO 8601 timestamp of when the transfer was completed.
+</ResponseField>

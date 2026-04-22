@@ -1,0 +1,79 @@
+---
+title: "Troubleshoot Domain Authentication"
+---
+
+After you've connected your domain or email-sending domain, it can take up to 24 hours for the DNS changes to propagate and reflect in Xoxoday. If your domain isn't connecting as expected after 24 hours, follow the steps below to troubleshoot your domain.
+
+## Check the status of your Domain Authentication
+
+Verify that the DNS records have been updated in Xoxoday and in your domain host.
+
+1. In your Xoxoday Plum account, go to **Settings \> Notifications**.
+2. In the left sidebar menu, navigate to **Website \> Domains & URLs**.
+3. If your domain has pending status, acknowledge that records are added and click **Verify** to authenticate the domain.
+4. If your domain connection failed, you need to **Verify** again.
+
+### Domain connection errors
+
+If Xoxoday cannot connect your domain, there are three error types:
+
+- **Typo**: the record added to your domain host is different from what's in Xoxoday.
+- **Missing record**: Xoxoday is unable to identify the record in your domain host.
+- **Conflicting record**: there is a conflicting DNS record in your domain host.
+
+To resolve these errors, ensure that the records in your domain host match what's in Xoxoday.
+
+## Verify DNS records in your domain host
+
+You should also check the status of your DNS records in your domain host.
+
+1. Log in to your DNS host.
+2. Confirm that the CNAME records match the Host(name) and Values provided by Xoxoday during the connection process.
+3. If you've confirmed that your DNS records have been updated correctly, click either **Refresh** or check them again in the domain setup within Xoxoday to confirm your records have been updated and your domain can be connected.
+
+If this does not work, you can try copying and pasting the provided values again, or review the following common DNS record issues.
+
+## Common DNS issues
+
+If you are unable to connect your domains, here are some common DNS issues that you can check for in your DNS host.
+
+### Duplicated Domain
+
+Some domain hosts will add a root domain to your CNAME records by default. For example, when entering `xox**._domainkey.example.com`, an additional domain will be added. The records would then propagate as `xox*._domainkey.example.com.example.com`.
+
+You can use external tools to check for a duplicated root domain. For example, you can use [Dig](https://dig.example.com) to check your email sending domains or [Whatsmydns](https://whatsmydns.net) for your site domains.
+
+If your domain name was duplicated in your CNAME record:
+
+1. Keep the domain manager tool open in your browser.
+2. In a new tab or window, log in to your DNS provider and navigate to your DNS Zone File (sometimes appears as Domain Files, Manage DNS).
+3. Enter your host(name) values without the domain. This will look different for domains and email-sending domains:
+   - **Domain**: enter `info.` rather than `info.example.com`.
+   - **Email sending domain**: enter `xox**._domainkey` rather than `xox**._domainkey.example.com`.
+
+### Records invalidated by domain host
+
+If your domain name was not duplicated in your CNAME record, but you're seeing a record invalid error in your domain manager, the updated records may have been invalidated by your domain host.
+
+Your DNS provider may have invalidated your CNAME record because of certain characters, such as an underscore (`_`) or a hyphen (`--`). Contact your provider's support team for further assistance.
+
+<Note>
+  The CNAME records that appear in your Xoxoday email sending domain setup strictly adhere to the DKIM protocol and are supported by most major DNS providers.
+</Note>
+
+## Use Whatsmydns to troubleshoot site domains
+
+Whatsmydns is a tool used to check DNS records and DNS propagation for your site domains. You can use Whatsmydns to confirm that your DNS records have been correctly updated and are propagating successfully.
+
+1. Navigate to [Whatsmydns.net](https://whatsmydns.net).
+2. In the top left, enter the domain you're trying to connect to in Xoxoday.
+3. Click the dropdown menu and select **CNAME**.
+4. Click **Search**.
+
+If your DNS update was successful, the results should correspond to the values provided in Xoxoday.
+
+If the Whatsmydns results do not match the value provided in Xoxoday, this means that the DNS record may have been incorrectly updated or is not propagating correctly. You can try updating your DNS record again, or reach out to your domain provider to troubleshoot further.
+
+## Need more help?
+
+If you're still seeing problems after completing the troubleshooting steps above, reach out to [cs@giift.com](mailto:cs@giift.com).

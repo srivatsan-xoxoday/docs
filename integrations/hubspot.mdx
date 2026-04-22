@@ -1,0 +1,159 @@
+---
+title: "Hubspot Integration"
+description: "Connect Plum to HubSpot to send 1:1 rewards, automate reward delivery via workflows, and track results in your HubSpot dashboard."
+---
+
+The HubSpot and Plum integration lets you send rewards, incentives, and branded gifts to contacts, prospects, and partners directly from HubSpot. You can reward a single contact with one click, send to a segmented list via email, or fire rewards automatically when a deal stage changes or a contact reaches a lifecycle milestone—all without leaving HubSpot.
+
+## What you can do with the integration
+
+- Send a 1:1 reward instantly from any contact record using the Plum widget.
+- Automate reward delivery through HubSpot Workflows triggered by lifecycle changes, deal stages, or any other property.
+- Enrich a HubSpot email list with unique reward links and send personalised reward emails.
+- Generate a single 1-Many reward link and embed it in any marketing email as a CTA.
+- Track reward delivery and redemption status in the HubSpot activity timeline and custom dashboards.
+
+<Tip>
+  Use the email registered with HubSpot when you sign up for Plum—this makes connecting the two accounts faster and avoids authentication issues.
+</Tip>
+
+## Installing the Plum app in HubSpot
+
+<Steps>
+  <Step title="Go to the HubSpot App Marketplace">
+    Log in to HubSpot and click the **shop icon** in the top right corner to open the App Marketplace.
+  </Step>
+  <Step title="Search for Xoxoday Plum">
+    Search for **Xoxoday Plum** and click **Install**.
+  </Step>
+  <Step title="Sign in or sign up for Plum">
+    You will be redirected to the Plum registration page. If you already have a Plum account, sign in with your existing credentials. New users can click **Signup** to create a free account.
+  </Step>
+  <Step title="Add funds to your Plum wallet">
+    Before you can send rewards, add funds to your Plum account. Go to **Add Funds** in the Plum menu bar and complete the payment. The recharged amount will be reflected in your wallet immediately.
+  </Step>
+</Steps>
+
+Once the app is installed and your wallet is funded, you are ready to set up reward campaigns and automations.
+
+## Sending 1:1 rewards from a contact record
+
+The 1:1 rewards widget lets you send a personalised reward to a single contact directly from their HubSpot profile. This is ideal for high-touch gestures—thanking a VIP client after a meeting, rewarding a partner for a referral, or resolving a support issue with a goodwill gift.
+
+<Info>
+  HubSpot users who need access to the 1:1 rewards widget must be added as a user in Plum with Admin or Super Admin access.
+</Info>
+
+<Steps>
+  <Step title="Open the contact record">
+    Navigate to the detail page of the contact you want to reward in HubSpot.
+  </Step>
+  <Step title="Open the Xoxoday widget">
+    Find the **Xoxoday Card** on the left panel and click **Send Rewards**. The Plum 1:1 widget opens.
+  </Step>
+  <Step title="Choose your delivery method">
+    Select either **Reward Link** (generates a unique link you can include in any email) or **Reward Email via Plum** (sends a branded reward email directly from the Plum platform).
+  </Step>
+  <Step title="Select a campaign">
+    Choose the reward campaign from the dropdown. Each campaign defines the reward type, denomination, and branding.
+  </Step>
+  <Step title="Send the reward">
+    Click **Send**. For the link option, copy the generated URL and include it in your outreach. For the email option, the reward is sent immediately. The contact's reward history is updated and visible to super-admins.
+  </Step>
+</Steps>
+
+<Note>
+  Only contacts who are part of your HubSpot contact list are eligible to redeem rewards sent via the widget.
+</Note>
+
+## Setting up email-based reward automation
+
+Email-based automation is the best fit when you want to reward an entire HubSpot contact list—for example, all webinar attendees or every respondent who completed a survey in the last month—without building a workflow trigger.
+
+Plum enriches each contact in the list with a unique reward link, and you then design the email in HubSpot and insert a Plum token so each recipient receives their own secure claim link.
+
+<Steps>
+  <Step title="Connect Plum to HubSpot">
+    If not already done, go to **Manage Integrations** in Plum and select the HubSpot integration. Click **Connect** and authorise the connection.
+  </Step>
+  <Step title="Create a new automation">
+    From the Plum HubSpot integration page, click **Automate your first reward** or **Create New Automation**. When prompted, select **Email-based reward automation**.
+  </Step>
+  <Step title="Name the automation and choose a contact list">
+    Give the automation a name—you will use this name when building your HubSpot email template. Select the HubSpot contact list whose members should receive the reward.
+  </Step>
+  <Step title="Create or select a Xoxolink campaign">
+    Choose an existing Xoxolink campaign or create a new one. Set the campaign name, link expiry date, country, and denomination.
+  </Step>
+  <Step title="Wait for contact enrichment">
+    After launching the automation, Plum enriches each contact with a unique reward link. You can monitor progress on the reward report page. Once enrichment is complete, head to HubSpot to build and send the email.
+  </Step>
+  <Step title="Send the email from HubSpot">
+    In HubSpot, create an email template and insert the Plum token (the automation name you set in Step 3) as a personalisation token. When you send the email, each contact receives their own secure reward link.
+  </Step>
+</Steps>
+
+## Setting up workflow-based reward automation
+
+Workflow-based automation triggers a reward whenever a contact meets a condition you define—for example, when a deal moves to Closed Won, or when a contact's lifecycle stage changes to Customer.
+
+<Steps>
+  <Step title="Create a Plum reward automation">
+    In Plum, go to **Manage Integrations \> HubSpot** and click **Create New**. Select **Workflow-based reward automation**, give it a name, and choose your reward campaign.
+  </Step>
+  <Step title="Configure reward settings">
+    Select the campaign, customise the reward email, and choose whether rewards should be sent automatically or require manual approval. You can also set a custom time range or maximum reward count.
+  </Step>
+  <Step title="Launch the automation in Plum">
+    Click **Save & Launch**. The automation is now active and ready to receive triggers from HubSpot.
+  </Step>
+  <Step title="Create a workflow in HubSpot">
+    In HubSpot, go to **Automation \> Workflows** and click **Create Workflow**. Choose the workflow type (Contact-based, Deal-based, or Company-based) and click **Start from Scratch**.
+  </Step>
+  <Step title="Set the enrollment trigger">
+    Add an enrollment trigger—for example, **Lifecycle Stage is Customer** or **Deal Stage is Closed Won**. Apply your filters and save.
+  </Step>
+  <Step title="Add Plum as the action">
+    Click **\+** to add an action. Select **Xoxoday Plum** as the action application. Choose the Plum reward automation you created in step 1 and click **Save**.
+  </Step>
+  <Step title="Turn on the workflow">
+    Review enrollment settings and timing, then turn the workflow on. From this point, every contact that meets the enrollment criteria will automatically receive a reward.
+  </Step>
+</Steps>
+
+## Using 1-Many reward links for bulk distribution
+
+The 1-Many reward link is a single reusable URL you can embed in any HubSpot marketing email as a CTA. When a contact clicks the link and enters their email address, Plum validates that they are in your HubSpot contact list and allows them to claim their reward.
+
+<Steps>
+  <Step title="Create a 1-Many automation in Plum">
+    In the HubSpot integration in Plum, click **Create New Automation** and select **1-Many Reward Link**. Accept the guidelines and click **Continue**.
+  </Step>
+  <Step title="Select a campaign and configure settings">
+    Choose the reward campaign, set a link expiry date, and configure approval type and reward limits.
+  </Step>
+  <Step title="Copy the generated link">
+    After creating the automation, Plum generates a reward claim URL. Copy this link—you will add it to your HubSpot email as a hyperlink or button CTA.
+  </Step>
+  <Step title="Insert the link in HubSpot">
+    In HubSpot, open your email template and hyperlink the CTA button or text to the copied reward URL. Send to your contact list.
+  </Step>
+</Steps>
+
+<Warning>
+  Only contacts who are part of your HubSpot contact list can redeem a 1-Many reward. Anyone whose email is not found in HubSpot will see a validation error when they try to claim.
+</Warning>
+
+## Report dashboard in HubSpot
+
+Plum pushes reward events to HubSpot as custom contact events so you can track which contacts have received, claimed, or not yet redeemed rewards.
+
+**At the contact level**, reward activity appears in the contact's activity timeline. Each event updates when the status changes—for example, when a reward is sent and again when it is claimed.
+
+**For deal-influence reporting**, you can build custom dashboards that correlate reward activity with open or closed deals:
+
+1. Create two custom contact properties: a single-line text field named **Xoxoday Reward Campaign Status** and a boolean field named **Xoxoday Touch**.
+2. Create a HubSpot workflow that populates these fields when a contact redeems a Plum reward.
+3. Build a cross-object **Contacts and Deals** report in HubSpot to see the influence of Plum reward campaigns on pipeline.
+
+You can also use HubSpot **lists** to segment contacts by reward status (Sent, Claimed, etc.) for further targeting.

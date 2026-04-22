@@ -1,0 +1,121 @@
+---
+title: "Authenticate with the Gift Cards API"
+description: "Generate your Client ID, obtain a Bearer access token for the Gift Cards API, and authenticate all catalog and order requests."
+sidebarTitle: "Authentication"
+---
+
+The Gift Cards API uses the same OAuth 2.0 Bearer token authentication as all other Plum APIs. You need a Client ID, a Secret ID, and a valid access token to make any request. This page walks you through generating these credentials and including them in your Gift Cards API calls.
+
+## Environment URLs
+
+| Environment | Base URL |
+|-------------|----------|
+| Production  | `https://accounts.xoxoday.com/chef` |
+| Sandbox     | `https://canvas.xoxoday.com/chef` |
+
+Use the sandbox URL while you develop and test your integration. The sandbox environment has a limited product catalog compared to production, but the authentication and API workflow are identical.
+
+## Generate your Client ID and Secret
+
+<Steps>
+  <Step title="Sign in to the Plum admin portal">
+    Log in using your Super Admin credentials. API credential generation requires Super Admin access.
+  </Step>
+  <Step title="Go to API settings">
+    Click **Settings** in the top navigation bar, select **API** from the left panel, then open the **Storefront Integration** tab.
+  </Step>
+  <Step title="Generate your credentials">
+    Click **Generate ID**. Confirm the dialog to create your Client ID and Secret ID. Copy both values and store them securely—you will not be able to retrieve the Secret ID again after leaving this page.
+  </Step>
+</Steps>
+
+## Obtain an access token
+
+Use your Client ID and Secret to exchange an authorization code for an access token. The token endpoint is:
+
+- **Sandbox**: `https://canvas.xoxoday.com/chef/v1/oauth/token/company`
+- **Production**: `https://accounts.xoxoday.com/chef/v1/oauth/token/company`
+
+<CodeGroup>
+```bash curl
+curl -X POST https://accounts.xoxoday.com/chef/v1/oauth/token/company \
+  -H "Content-Type: application/json" \
+  -d '{
+    "grant_type": "authorization_code",
+    "code": "YOUR_AUTHORIZATION_CODE",
+    "redirect_uri": "YOUR_REDIRECT_URI",
+    "client_id": "YOUR_CLIENT_ID",
+    "client_secret": "YOUR_CLIENT_SECRET"
+  }'
+```
+
+```javascript Node.js
+const response = await fetch(
+  'https://accounts.xoxoday.com/chef/v1/oauth/token/company',
+  {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      grant_type: 'authorization_code',
+      code: 'YOUR_AUTHORIZATION_CODE',
+      redirect_uri: 'YOUR_REDIRECT_URI',
+      client_id: 'YOUR_CLIENT_ID',
+      client_secret: 'YOUR_CLIENT_SECRET',
+    }),
+  }
+);
+const { access_token, refresh_token } = await response.json();
+```
+</CodeGroup>
+
+A successful response returns your access token and refresh token:
+
+```json
+{
+  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGci...",
+  "token_type": "bearer",
+  "expires_in": 2592000,
+  "refresh_token": "3ecc3cfc35c624978b87dd6735bd1dab...",
+  "access_token_expiry": 1692265307092,
+  "refresh_token_expiry": 1694857307092
+}
+```
+
+<Warning>
+  The authorization code that precedes the token exchange is valid for only **5 minutes**. Complete the token exchange immediately after receiving the code.
+</Warning>
+
+## Include the token in requests
+
+Pass your access token as a Bearer token in the `Authorization` header of every Gift Cards API request:
+
+```bash
+curl -X GET https://accounts.xoxoday.com/chef/v1/oauth/api/get-filters \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "X-Api-Key: YOUR_CLIENT_ID" \
+  -H "X-Secret-Key: YOUR_CLIENT_SECRET"
+```
+
+## Token management
+
+| Token | Validity |
+|-------|----------|
+| Access token | 15 days |
+| Refresh token | 30 days |
+
+Refresh your access token before it expires using the refresh token:
+
+```bash
+curl -X POST https://accounts.xoxoday.com/chef/v1/oauth/token/refresh \
+  -H "Content-Type: application/json" \
+  -d '{
+    "grant_type": "refresh_token",
+    "refresh_token": "YOUR_REFRESH_TOKEN",
+    "client_id": "YOUR_CLIENT_ID",
+    "client_secret": "YOUR_CLIENT_SECRET"
+  }'
+```
+
+<Tip>
+  Automate token refresh in your backend service by scheduling a refresh job a few hours before the `access_token_expiry` timestamp. This prevents your integration from going offline unexpectedly.
+</Tip>

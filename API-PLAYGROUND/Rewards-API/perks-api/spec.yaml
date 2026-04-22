@@ -1,0 +1,307 @@
+openapi: 3.0.3
+
+info:
+  title: Xoxoday Rewards API – Perks
+  version: "1.2"
+  description: |
+    Perks API endpoints for browsing offers/perks catalog and filtering.
+
+    Both operations dispatch to `POST /v1/oauth/api` on `stagingstores.xoxoday.com`.
+    Virtual path suffixes are used for playground differentiation.
+
+    **Notable differences from other Rewards API categories:**
+    - Fetch Filters uses `plumProAPI.mutation.fetchFilters` (not `getFilters`)
+      and accepts `categoryType` and `countryIds` (integer array)
+    - Fetch Offers uses `categoryTypes` (plural string, not `categoryType`)
+    - No balance, order, or payment report endpoints in this category
+
+servers:
+  - url: https://stagingstores.xoxoday.com/chef/v1/oauth/api
+    description: Sandbox
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Catalog
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: "`Authorization: Bearer <access_token>`"
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid access token.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string, example: Unauthorized }
+    BadRequest:
+      description: Invalid request body or parameters.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string }
+              message: { type: string }
+    BadGateway:
+      description: Upstream service error.
+
+paths:
+
+  # ── Fetch Filter API ──────────────────────────────────────────────────────────
+  # Real URL: POST https://stagingstores.xoxoday.com/chef/v1/oauth/api
+  # Note: uses "fetchFilters" query (not "getFilters").
+  # Accepts categoryType and countryIds (integer array) not present in other categories.
+
+  /fetchFilters:
+    post:
+      operationId: perksGetFilters
+      summary: Fetch Filter API
+      description: >
+        Retrieve available filters for the perks/offers catalog.
+
+
+        **Note:** This endpoint uses `plumProAPI.mutation.fetchFilters` (not `getFilters`)
+        and accepts `categoryType` and `countryIds` fields not present in other categories.
+
+
+        **Real URL:** `POST https://stagingstores.xoxoday.com/chef/v1/oauth/api`
+      tags: [Catalog]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  enum: [plumProAPI.mutation.fetchFilters]
+                  default: plumProAPI.mutation.fetchFilters
+                tag:
+                  type: string
+                  enum: [plumProAPI]
+                  default: plumProAPI
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        categoryType:
+                          type: string
+                          enum: [offers]
+                          default: offers
+                          description: Must be `"offers"` for the perks catalog.
+                        includeFilters:
+                          type: string
+                          description: Filter IDs to explicitly include.
+                          example: "5647"
+                        excludeFilters:
+                          type: string
+                          description: Filter IDs to explicitly exclude.
+                          example: "6444"
+                        countryIds:
+                          type: array
+                          description: List of country IDs to scope filters by.
+                          items:
+                            type: integer
+                          example: [976]
+            example:
+              query: plumProAPI.mutation.fetchFilters
+              tag: plumProAPI
+              variables:
+                data:
+                  categoryType: offers
+                  includeFilters: "5647"
+                  excludeFilters: "6444"
+                  countryIds: [976]
+      responses:
+        "200":
+          description: Filter list returned successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      fetchFilters:
+                        type: object
+                        properties:
+                          status: { type: number }
+                          data:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                filterGroupName: { type: string }
+                                filterGroupDescription: { type: string }
+                                filterGroupCode: { type: string }
+                                filters:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      filterValue: { type: string }
+                                      isoCode: { type: string }
+                                      filterValueCode: { type: string }
+              example:
+                data:
+                  fetchFilters:
+                    status: 1
+                    data:
+                      - filterGroupName: Category
+                        filterGroupDescription: Filter by offer category
+                        filterGroupCode: voucher_category
+                        filters:
+                          - filterValue: Food & Restaurant
+                            isoCode: FR
+                            filterValueCode: food_restaurant
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ── Fetch Offers API ──────────────────────────────────────────────────────────
+  # Real URL: POST https://stagingstores.xoxoday.com/chef/v1/oauth/api
+  # Note: uses "categoryTypes" (plural string), not "categoryType".
+
+  /fetchOffers:
+    post:
+      operationId: perksFetchOffers
+      summary: Fetch Offers API
+      description: >
+        Fetch a paginated list of available perks/offers from the catalog.
+
+
+        **Note:** This endpoint uses `categoryTypes` (plural) as the filter field,
+        not `categoryType`.
+
+
+        **Real URL:** `POST https://stagingstores.xoxoday.com/chef/v1/oauth/api`
+      tags: [Catalog]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  enum: [plumProAPI.mutation.getVouchers]
+                  default: plumProAPI.mutation.getVouchers
+                tag:
+                  type: string
+                  enum: [plumProAPI]
+                  default: plumProAPI
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        limit:
+                          type: integer
+                          description: Number of results per page.
+                          example: 10
+                        page:
+                          type: integer
+                          description: Page number to fetch.
+                          example: 1
+                        includeProducts:
+                          type: string
+                          description: Comma-separated product IDs to include.
+                          example: "12345"
+                        excludeProducts:
+                          type: string
+                          description: Comma-separated product IDs to exclude.
+                          example: "54623"
+                        categoryTypes:
+                          type: string
+                          enum: [offers]
+                          default: offers
+                          description: Must be `"offers"`. Note the plural field name.
+                        sort:
+                          type: object
+                          properties:
+                            field:
+                              type: string
+                              example: name
+                            order:
+                              type: string
+                              enum: [ASC, DESC]
+                              example: ASC
+                        filters:
+                          type: array
+                          description: List of filter objects.
+                          items:
+                            type: object
+                            properties:
+                              key: { type: string }
+                              value: { type: string }
+            example:
+              query: plumProAPI.mutation.getVouchers
+              tag: plumProAPI
+              variables:
+                data:
+                  limit: 10
+                  page: 1
+                  includeProducts: "12345"
+                  excludeProducts: "54623"
+                  categoryTypes: offers
+                  sort:
+                    field: name
+                    order: ASC
+      responses:
+        "200":
+          description: Perks/offers catalog returned successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      getVouchers:
+                        type: object
+                        properties:
+                          status: { type: number }
+                          data:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                productId: { type: number }
+                                name: { type: string }
+                                description: { type: string }
+                                orderQuantityLimit: { type: number }
+                                imageUrl: { type: string }
+                                currencyCode: { type: string }
+                                countryName: { type: string }
+                                countryCode: { type: string }
+                                valueType: { type: string }
+                                maxValue: { type: number }
+                                minValue: { type: number }
+                                valueDenominations: { type: string }
+                                deliveryType: { type: string }
+                                usageType: { type: string }
+                                fee: { type: number }
+                                discount: { type: number }
+                                isPhoneNumberMandatory: { type: boolean }
+                                isRecommended: { type: number }
+                                is_free: { type: number }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }

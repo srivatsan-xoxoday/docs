@@ -1,0 +1,561 @@
+openapi: 3.0.3
+
+info:
+  title: Xoxoday Reward Points API
+  version: "1.2"
+  description: |
+    APIs for sending, fetching, and cancelling reward points in the Xoxoday ecosystem.
+
+    **Auth endpoints** use operation-level server overrides against
+    `https://stagingstores.xoxoday.com/chef/v1/oauth`.
+
+    **Points operations** (`/fetchPoints`, `/sendPoints`, `/cancelPoints`) are virtual
+    path suffixes — all three really dispatch to `POST /v1/oauth/api` via the body
+    `query` field. OpenAPI does not allow two POST operations on the same path, so
+    virtual suffixes are used for playground differentiation.
+
+    **Cancel Points** uses `accounts.xoxoday.com` as its real host (operation-level
+    server override applied).
+
+servers:
+  - url: https://stagingstores.xoxoday.com/chef/v1/oauth/api
+    description: Sandbox
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Authentication
+    description: Token management — validate, refresh, and create user tokens.
+  - name: Points
+    description: Send, fetch, and cancel reward points.
+
+# ─── Components ───────────────────────────────────────────────────────────────
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: "`Authorization: Bearer <access_token>`"
+
+  schemas:
+
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: Newly generated access token.
+        token_type:
+          type: string
+          example: bearer
+        expires_in:
+          type: integer
+          description: Access token validity in seconds.
+        refresh_token:
+          type: string
+          description: New refresh token (old one is immediately invalidated).
+        access_token_expiry:
+          type: number
+          description: Epoch timestamp (ms) when the access token expires.
+        refresh_token_expiry:
+          type: number
+          description: Epoch timestamp (ms) when the refresh token expires.
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid access token.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string, example: Unauthorized }
+    BadRequest:
+      description: Invalid request body or parameters.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string }
+              message: { type: string }
+    BadGateway:
+      description: Upstream service error.
+
+# ─── Paths ────────────────────────────────────────────────────────────────────
+paths:
+
+  # ── Validate Token ────────────────────────────────────────────────────────────
+  # Real URL: GET https://stagingstores.xoxoday.com/chef/v1/oauth/token
+
+  /token:
+    get:
+      operationId: validateTokenPoints
+      summary: Validate Token
+      description: >
+        Validate whether the current `access_token` is still active.
+        Pass the Bearer token in the `Authorization` header.
+      tags: [Authentication]
+      servers:
+        - url: https://stagingstores.xoxoday.com/chef/v1/oauth
+          description: Sandbox
+      responses:
+        "200":
+          description: Token is valid.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    description: The validated access token.
+                  token_type:
+                    type: string
+                    description: "Always `bearer`."
+                  expires_in:
+                    type: number
+                    description: Token validity duration in seconds.
+                  access_token_expiry:
+                    type: number
+                    description: Epoch timestamp (ms) when the access token expires.
+                  refresh_token_expiry:
+                    type: number
+                    description: Epoch timestamp (ms) when the refresh token expires.
+              example:
+                access_token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+                token_type: bearer
+                expires_in: 1296000
+                access_token_expiry: 1718000000000
+                refresh_token_expiry: 1720000000000
+        "401": { $ref: '#/components/responses/Unauthorized' }
+
+  # ── Refresh Token ─────────────────────────────────────────────────────────────
+  # Real URL: POST https://stagingstores.xoxoday.com/chef/v1/oauth/token/company
+
+  /token/company:
+    post:
+      operationId: refreshTokenPoints
+      summary: Refresh Token
+      description: >
+        Get a new access token using your refresh token.
+        Every call issues a brand-new refresh token — the old one is immediately
+        invalidated. Always persist the new refresh token from the response.
+      tags: [Authentication]
+      security: []
+      servers:
+        - url: https://stagingstores.xoxoday.com/chef/v1/oauth
+          description: Sandbox
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [grant_type, refresh_token, client_id, client_secret]
+              properties:
+                grant_type:
+                  type: string
+                  enum: [refresh_token]
+                  description: Must be `"refresh_token"`.
+                refresh_token:
+                  type: string
+                  description: The existing refresh token used to obtain a new access token.
+                client_id:
+                  type: string
+                  description: Client ID provided to you for authentication.
+                client_secret:
+                  type: string
+                  description: Client secret associated with the client ID.
+            example:
+              grant_type: refresh_token
+              refresh_token: "XXXXXXXXX"
+              client_id: "XXXXXXXXX"
+              client_secret: "XXXXXXXXX"
+      responses:
+        "200":
+          description: New tokens issued successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              example:
+                access_token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+                token_type: bearer
+                expires_in: 1296000
+                refresh_token: "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4..."
+                access_token_expiry: 1718000000000
+                refresh_token_expiry: 1720000000000
+        "401": { $ref: '#/components/responses/Unauthorized' }
+
+  # ── Creating User Tokens using Company Token ──────────────────────────────────
+  # Real URL: POST https://stagingstores.xoxoday.com/chef/v1/oauth/token/create/user
+
+  /token/create/user:
+    post:
+      operationId: createUserToken
+      summary: Creating User Tokens using Company Token
+      description: >
+        Exchange a Company Bearer token for a User-scoped access token.
+        Pass your Company-level Bearer token in the `Authorization` header.
+        The response returns a full token set scoped to the specified user session.
+      tags: [Authentication]
+      servers:
+        - url: https://stagingstores.xoxoday.com/chef/v1/oauth
+          description: Sandbox
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_input, scope]
+              properties:
+                user_input:
+                  type: string
+                  format: email
+                  description: Super Admin email address.
+                  example: your.email@example.com
+                scope:
+                  type: string
+                  description: "Permission scope being assigned. Use `user_session`."
+                  example: user_session
+            example:
+              user_input: "your.email@example.com"
+              scope: "user_session"
+      responses:
+        "200":
+          description: User-scoped tokens issued successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              example:
+                access_token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+                token_type: bearer
+                expires_in: 1296000
+                refresh_token: "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4..."
+                access_token_expiry: 1718000000000
+                refresh_token_expiry: 1720000000000
+        "401": { $ref: '#/components/responses/Unauthorized' }
+
+  # ── Fetch Points API ──────────────────────────────────────────────────────────
+  # Real URL: POST https://stagingstores.xoxoday.com/chef/v1/oauth/api
+  # Virtual path suffix used — OpenAPI cannot have two POST ops on the same path.
+
+  /fetchPoints:
+    post:
+      operationId: fetchPoints
+      summary: Fetch Points API
+      description: >
+        Fetch the current reward points balance for a specific user.
+        Can be used to display balances inside your own UI.
+
+
+        **Real URL:** `POST https://stagingstores.xoxoday.com/chef/v1/oauth/api`
+      tags: [Points]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  enum: [storesAdmin.query.user_balance]
+                  default: storesAdmin.query.user_balance
+                  description: "Always use `storesAdmin.query.user_balance`."
+                tag:
+                  type: string
+                  enum: [storeAdmin]
+                  default: storeAdmin
+                  description: "Always use `storeAdmin`."
+                variables:
+                  type: object
+                  properties:
+                    user_data:
+                      type: object
+                      properties:
+                        email:
+                          type: string
+                          format: email
+                          description: User's email address to fetch balance for.
+                          example: your.email@example.com
+                        phone:
+                          type: string
+                          description: User's phone number to fetch balance for.
+                          example: "+91-8999888887"
+            example:
+              query: storesAdmin.query.user_balance
+              tag: storeAdmin
+              variables:
+                user_data:
+                  email: "your.email@example.com"
+                  phone: "+91-8999888887"
+      responses:
+        "200":
+          description: User points balance returned successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      user_balance:
+                        type: object
+                        properties:
+                          success:
+                            type: integer
+                            description: "`1` = success."
+                          message:
+                            type: string
+                            nullable: true
+                          data:
+                            type: object
+                            properties:
+                              total:
+                                type: number
+                                description: Total available reward points for the user.
+              example:
+                data:
+                  user_balance:
+                    success: 1
+                    message: null
+                    data:
+                      total: 1500
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ── Send Points API ───────────────────────────────────────────────────────────
+  # Real URL: POST https://stagingstores.xoxoday.com/chef/v1/oauth/api
+
+  /sendPoints:
+    post:
+      operationId: sendPoints
+      summary: Send Points API
+      description: >
+        Credit reward points to one or more recipients from the Super Admin wallet.
+
+
+        **Real URL:** `POST https://stagingstores.xoxoday.com/chef/v1/oauth/api`
+      tags: [Points]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  enum: [storesAdmin.mutation.sendBalance]
+                  default: storesAdmin.mutation.sendBalance
+                  description: "Always use `storesAdmin.mutation.sendBalance`."
+                tag:
+                  type: string
+                  enum: [storeAdmin]
+                  default: storeAdmin
+                  description: "Always use `storeAdmin`."
+                variables:
+                  type: object
+                  required: [sender_email, recipients]
+                  properties:
+                    sender_email:
+                      type: string
+                      format: email
+                      description: Super Admin email address sending the points.
+                      example: superadmin@yourcompany.com
+                    expiry_month:
+                      type: integer
+                      description: Points expiry in months from the date of sending.
+                      example: 12
+                    recipients:
+                      type: array
+                      description: List of recipients to send points to.
+                      items:
+                        type: object
+                        required: [to_email, amount]
+                        properties:
+                          to_name:
+                            type: string
+                            description: Recipient's full name.
+                            example: John Smith
+                          to_email:
+                            type: string
+                            format: email
+                            description: Recipient's email address.
+                            example: john@company.com
+                          amount:
+                            type: string
+                            description: Amount of points to send.
+                            example: "100"
+                          citation:
+                            type: string
+                            description: Purpose or reference note for the transaction.
+                            example: Awesome work
+            example:
+              query: storesAdmin.mutation.sendBalance
+              tag: storeAdmin
+              variables:
+                sender_email: "superadmin@yourcompany.com"
+                expiry_month: 12
+                recipients:
+                  - to_name: "John Smith"
+                    to_email: "john@company.com"
+                    amount: "100"
+                    citation: "Awesome work"
+      responses:
+        "200":
+          description: Points sent successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      unique_id:
+                        type: integer
+                        description: Unique identifier of the transaction.
+                      email:
+                        type: string
+                        description: Email address of the recipient.
+                      points:
+                        type: number
+                        description: Number of points credited.
+                      name:
+                        type: string
+                        description: Full name of the recipient.
+                      phone_code:
+                        type: string
+                        description: Country calling code of the recipient's phone number.
+                      phone_number:
+                        type: string
+                        description: Mobile number of the recipient.
+              example:
+                data:
+                  unique_id: 987654321
+                  email: "john@company.com"
+                  points: 100
+                  name: "John Smith"
+                  phone_code: "+1"
+                  phone_number: "9998887776"
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ── Cancel Points API ─────────────────────────────────────────────────────────
+  # Real URL: POST https://accounts.xoxoday.com/chef/v1/oauth/api
+  # Note: different host from the other points endpoints — server override applied.
+
+  /cancelPoints:
+    post:
+      operationId: cancelPoints
+      summary: Cancel Points API
+      description: >
+        Cancel previously issued points for one or more recipients using their
+        unique transaction ID.
+
+
+        **Real URL:** `POST https://accounts.xoxoday.com/chef/v1/oauth/api`
+      tags: [Points]
+      servers:
+        - url: https://accounts.xoxoday.com/chef/v1/oauth/api
+          description: Production
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  enum: [storesAdmin.mutation.cancelBalance]
+                  default: storesAdmin.mutation.cancelBalance
+                  description: "Always use `storesAdmin.mutation.cancelBalance`."
+                tag:
+                  type: string
+                  enum: [storeAdmin]
+                  default: storeAdmin
+                  description: "Always use `storeAdmin`."
+                variables:
+                  type: object
+                  properties:
+                    recipients_data:
+                      type: object
+                      properties:
+                        recipients:
+                          type: array
+                          description: List of transactions to cancel.
+                          items:
+                            type: object
+                            required: [unique_id]
+                            properties:
+                              unique_id:
+                                type: integer
+                                description: Unique transaction ID of the points issuance to cancel.
+                                example: 987654321
+            example:
+              query: storesAdmin.mutation.cancelBalance
+              tag: storeAdmin
+              variables:
+                recipients_data:
+                  recipients:
+                    - unique_id: 987654321
+      responses:
+        "200":
+          description: Cancellation result returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      cancelBalance:
+                        type: object
+                        properties:
+                          error:
+                            type: boolean
+                            description: "`false` = success."
+                          message:
+                            type: string
+                            description: Summary message describing the overall cancellation result.
+                          recipients:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                unique_id:
+                                  type: integer
+                                  description: Unique transaction ID.
+                                success:
+                                  type: boolean
+                                  description: Whether this transaction was successfully cancelled.
+                                message:
+                                  type: string
+                                  description: Transaction-level status message.
+              example:
+                data:
+                  cancelBalance:
+                    error: false
+                    message: "Cancellation processed successfully"
+                    recipients:
+                      - unique_id: 987654321
+                        success: true
+                        message: "Points cancelled successfully"
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }

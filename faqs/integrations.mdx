@@ -1,0 +1,100 @@
+---
+title: "Integrations FAQ: Setup and Troubleshooting"
+description: "Common questions about connecting Plum to HubSpot, Salesforce, Zapier, and survey tools—covering setup, errors, and best practices."
+---
+
+Plum is designed to work alongside the tools your team already uses. Whether you are connecting Plum to a CRM, an HRMS, a survey platform, or a custom internal system, this page answers the most common questions about how integrations work, how to set them up, and what to do when something goes wrong.
+
+<AccordionGroup>
+  <Accordion title="Which integrations are available on Plum?">
+    Plum supports a broad set of integrations across common enterprise categories:
+
+    - **CRM platforms:** Salesforce and similar CRM tools via API.
+    - **HRMS platforms:** SAP SuccessFactors (natively integrated via SAML 2.0), Darwinbox, and others.
+    - **Survey tools:** SurveyMonkey and similar tools for tying survey completion to reward delivery.
+    - **ERP and POS systems:** API-based integration with platforms such as SAP, PunchOut, and custom ERP systems.
+    - **Loyalty management systems (LMS):** API integration to support point-based redemptions and earnings.
+    - **Productivity and automation tools:** Zapier for no-code workflow automation (see below).
+    - **Custom integrations:** REST APIs are available for building custom connections to any system.
+
+    For a full list of supported integration partners, refer to your account documentation or contact your Plum implementation specialist.
+  </Accordion>
+
+  <Accordion title="How do I connect Plum to HubSpot?">
+    Plum can connect to HubSpot through its REST API or via Zapier for no-code setup. The general process is:
+
+    1. Generate API credentials (access token and refresh token) from the Plum admin dashboard.
+    2. Use those credentials to authenticate API calls from HubSpot or your automation tool.
+    3. Configure triggers in HubSpot (for example, a deal reaching a certain stage) to call Plum's API and issue a reward.
+
+    The access token is valid for 15 days. Use the refresh token to generate a new access token before it expires. If both tokens expire, you will need to repeat the full authorization flow from the admin dashboard.
+
+    For step-by-step token setup, refer to the [API authentication guide](/api-reference/authentication). If you need help configuring the HubSpot side, contact your Plum implementation specialist.
+  </Accordion>
+
+  <Accordion title="Is there a Zapier app for Plum?">
+    Yes. Plum has a Zapier integration that lets you connect Plum to hundreds of other tools without writing code. You can use Zapier to trigger reward distribution based on events in other apps—for example, sending a gift card when a form is submitted in Typeform, a deal is closed in Salesforce, or a survey is completed in SurveyMonkey.
+
+    To set up a Zap, search for the Plum or Xoxoday app in the Zapier app directory and follow the connection instructions. You will need your Plum API credentials to authenticate the integration.
+  </Accordion>
+
+  <Accordion title="Can I use multiple integrations simultaneously?">
+    Yes. Plum's API-first architecture supports multiple concurrent integrations. You can connect Plum to your CRM, HRMS, survey tool, and custom systems at the same time. Each integration authenticates independently using its own API credentials.
+
+    For organizations with complex multi-system environments, it is recommended to work with your Plum implementation specialist to map out the integration architecture before go-live, particularly for high-volume or time-sensitive reward flows.
+  </Accordion>
+
+  <Accordion title="What do I do if my integration stops working?">
+    If an integration stops sending or receiving data correctly, work through the following checks:
+
+    1. **Verify your API token is still valid.** Access tokens expire after 15 days. Use the refresh token to generate a new one, or re-authenticate from the admin dashboard if the refresh token has also expired.
+    2. **Check the order status.** Use the `GetOrderDetails` API with your purchase order number (PO number) to retrieve the current state of any affected orders.
+    3. **Review error codes.** Common errors include `PLE10024` (vouchers out of stock). Refer to the API error reference for the full list of codes and their meanings.
+    4. **Check API rate limits.** Plum throttles API clients sending more than 5,000 requests per second. If your integration exceeds this limit, requests will be rate-limited.
+    5. **Contact support.** If you cannot identify the issue, reach out to your implementation manager with the environment, API request payload, error response, and timestamp. Plum's support response time ranges from 6 to 48 hours depending on severity.
+  </Accordion>
+
+  <Accordion title="How do I view integration performance reports?">
+    Plum maintains logs of all API transactions, order statuses, and delivery events within the platform. Authorized administrators can access these logs and reports from the admin dashboard.
+
+    For API-specific reporting:
+    - Use the `GetOrderDetails` API to retrieve the status and details of individual orders.
+    - Use webhooks to receive real-time status updates when order status changes—for example, when a pending order is fulfilled or when a voucher is delivered. Refer to the webhook documentation for setup instructions.
+
+    History data is recorded within the platform and can be requested if required. Plum does not expose full historical data via the API directly.
+  </Accordion>
+
+  <Accordion title="How does the Plum API handle real-time product availability and pricing?">
+    Yes, Plum's API suite supports real-time data retrieval. Specifically:
+
+    - **Product listings and availability:** Use the `GetVouchers` API to check the latest status and availability of products in the catalog.
+    - **Pricing:** Exchange rates are retrieved from currencylayer.com every 24 hours. The applicable exchange rate at the time of order placement is included in the order response.
+    - **Stock notifications:** Plum sends email notifications to all Super Admin accounts when gift cards become unavailable or when products and denominations change. These notifications are triggered every 24 hours.
+
+    Note that Plum does not provide a real-time prepaid stock check API. For non-API vendors, Plum maintains a prepaid digital stock buffer based on historical demand. If stock is exhausted, replenishment can take up to 7 days for less popular brands.
+  </Accordion>
+
+  <Accordion title="How does Plum integrate with loyalty management systems?">
+    Plum's reward marketplace can integrate with any existing loyalty management system (LMS) via API to support both point-based redemptions and point earnings:
+
+    - **Redemptions:** The API provides real-time access to user point balances. When a user redeems points through Plum, the LMS is updated via the integration.
+    - **Earnings:** Transactional data from Plum can be shared with the loyalty engine, enabling it to allocate points based on qualifying purchases or reward events.
+
+    This integration also supports cross-vertical point accumulation—for example, allowing points from telecom, fintech, and travel purchases to accumulate within a unified loyalty program. Contact your Plum account representative to discuss your LMS integration requirements.
+  </Accordion>
+
+  <Accordion title="Does Plum support SSO integration?">
+    Yes. Plum supports Single Sign-On (SSO) integration using industry-standard identity federation protocols:
+
+    - **SAML 2.0** (including native integration with SAP SuccessFactors)
+    - **OAuth 2.0**
+    - **WS-Federation**
+    - **SPML**
+
+    SSO can be configured as a self-service DIY setup from within the platform. Once set up, users authenticate through their existing identity provider without needing a separate Plum password. Contact your implementation specialist for setup guidance specific to your identity provider.
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+  For integration questions not covered here, contact your Plum implementation specialist or reach out at [cs@xoxoday.com](mailto:cs@xoxoday.com).
+</Tip>

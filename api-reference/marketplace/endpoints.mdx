@@ -1,0 +1,200 @@
+---
+title: "Marketplace API Endpoints: Balance, Orders, Refunds"
+description: "Reference for Plum Marketplace API endpoints: GET /get-balance, POST /place-order, and POST /refund—with request and response details."
+sidebarTitle: "Endpoints"
+---
+
+The Plum Marketplace API exposes three endpoints for checking your account balance, placing reward orders, and processing refunds. All endpoints require a valid Bearer access token and accept JSON request bodies.
+
+<Note>
+  All requests must be sent to the production base URL `https://accounts.xoxoday.com/chef` or the sandbox URL `https://canvas.xoxoday.com/chef` for testing.
+</Note>
+
+---
+
+## GET /get-balance
+
+Retrieve the current balance of your Plum account. Use this before placing orders to ensure sufficient funds.
+
+### Request
+
+```bash
+curl --request GET \
+  --url 'https://accounts.xoxoday.com/chef/api/v1/get-balance' \
+  --header 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  --header 'Content-Type: application/json'
+```
+
+### Response
+
+```json
+{
+  "status": "success",
+  "data": {
+    "balance": 5000.00,
+    "currency": "USD"
+  }
+}
+```
+
+<ResponseField name="status" type="string">
+  Indicates whether the request succeeded. Values: `success` or `error`.
+</ResponseField>
+
+<ResponseField name="data.balance" type="number">
+  Current account balance available for placing orders.
+</ResponseField>
+
+<ResponseField name="data.currency" type="string">
+  Currency code for the balance (e.g., `USD`, `INR`, `GBP`).
+</ResponseField>
+
+---
+
+## POST /place-order
+
+Place a reward order from the Plum catalog. Provide the product ID, denomination, and recipient details.
+
+### Request parameters
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="product_id" type="string" required>
+  The unique identifier of the reward product to order. Obtain this from the catalog via the Gift Cards API filters endpoint.
+</ParamField>
+
+<ParamField body="denomination" type="number" required>
+  The face value of the reward in the product's base currency.
+</ParamField>
+
+<ParamField body="quantity" type="integer" required>
+  Number of reward units to order. Must be at least `1`.
+</ParamField>
+
+<ParamField body="recipient_email" type="string">
+  Email address of the reward recipient. Required if delivery via email is desired.
+</ParamField>
+
+<ParamField body="recipient_name" type="string">
+  Full name of the recipient, used in the delivery email.
+</ParamField>
+
+<ParamField body="reference_id" type="string">
+  Your own unique reference ID for this order, used for idempotency and reconciliation.
+</ParamField>
+
+### Request example
+
+```bash
+curl --request POST \
+  --url 'https://accounts.xoxoday.com/chef/api/v1/place-order' \
+  --header 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "product_id": "GC_AMAZON_US_10",
+    "denomination": 10,
+    "quantity": 1,
+    "recipient_email": "jane@example.com",
+    "recipient_name": "Jane Smith",
+    "reference_id": "ORD-20240101-001"
+  }'
+```
+
+### Response
+
+```json
+{
+  "status": "success",
+  "data": {
+    "order_id": "PLM-ORD-987654",
+    "reference_id": "ORD-20240101-001",
+    "product_id": "GC_AMAZON_US_10",
+    "denomination": 10,
+    "quantity": 1,
+    "order_status": "processing",
+    "created_at": "2024-01-01T10:00:00Z"
+  }
+}
+```
+
+<ResponseField name="data.order_id" type="string">
+  Plum's unique identifier for the placed order. Use this to track status or initiate a refund.
+</ResponseField>
+
+<ResponseField name="data.order_status" type="string">
+  Current status of the order. Values: `processing`, `fulfilled`, `failed`.
+</ResponseField>
+
+<ResponseField name="data.created_at" type="string">
+  ISO 8601 timestamp of when the order was created.
+</ResponseField>
+
+<Note>
+  Use `reference_id` to make your order requests idempotent. If you retry an order with the same `reference_id`, the API returns the existing order rather than creating a duplicate.
+</Note>
+
+---
+
+## POST /refund
+
+Initiate a refund for an existing order. Refunds return the order value to your Plum account balance.
+
+### Request parameters
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token: `Bearer YOUR_ACCESS_TOKEN`
+</ParamField>
+
+<ParamField body="order_id" type="string" required>
+  The Plum order ID to refund, as returned by `/place-order`.
+</ParamField>
+
+<ParamField body="reason" type="string">
+  Optional reason for the refund, for your records.
+</ParamField>
+
+### Request example
+
+```bash
+curl --request POST \
+  --url 'https://accounts.xoxoday.com/chef/api/v1/refund' \
+  --header 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+  --header 'Content-Type: application/json' \
+  --data '{
+    "order_id": "PLM-ORD-987654",
+    "reason": "Recipient email entered incorrectly"
+  }'
+```
+
+### Response
+
+```json
+{
+  "status": "success",
+  "data": {
+    "refund_id": "PLM-REF-112233",
+    "order_id": "PLM-ORD-987654",
+    "refund_status": "processed",
+    "refunded_amount": 10.00,
+    "currency": "USD"
+  }
+}
+```
+
+<ResponseField name="data.refund_id" type="string">
+  Unique identifier for the refund transaction.
+</ResponseField>
+
+<ResponseField name="data.refund_status" type="string">
+  Status of the refund. Values: `processed`, `pending`, `failed`.
+</ResponseField>
+
+<ResponseField name="data.refunded_amount" type="number">
+  Amount credited back to your Plum account balance.
+</ResponseField>
+
+<Warning>
+  Refunds can only be initiated for orders in `processing` or `fulfilled` status. Orders already redeemed by the recipient may not be eligible for a refund.
+</Warning>

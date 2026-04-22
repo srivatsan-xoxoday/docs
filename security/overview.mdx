@@ -1,0 +1,68 @@
+---
+title: "Security Architecture and Data Protection"
+description: "Learn how Plum protects your data with AWS infrastructure, AES-256 encryption, role-based access controls, and third-party compliance certifications."
+---
+
+Plum is built on a multi-layered security architecture designed to protect your data at every stage—from how it is stored and transmitted to how access is controlled and threats are monitored. Whether you are evaluating Plum for the first time or reviewing security requirements for your organization, this page gives you a clear picture of what Plum does to keep your data safe.
+
+## Infrastructure
+
+Plum runs entirely on **Amazon Web Services (AWS)**, with primary hosting in the **United States** and optional regional hosting in **Singapore** for enterprise clients with data residency requirements. There is no on-premise storage of your data. All infrastructure leverages AWS's high-availability, geographically distributed data center architecture, which includes physical security controls, redundant power and networking, and independent security certifications.
+
+Production and non-production environments are physically segregated, meaning your live data is never used for testing or development purposes.
+
+## Encryption
+
+All customer data is protected by industry-standard encryption:
+
+- **Data at rest:** AES-256 encryption, with client-specific encryption keys for multi-tenant isolation.
+- **Data in transit:** TLS 1.2 encryption for all network communication between services, APIs, and users.
+- **Key management:** AWS Key Management Service (KMS) manages all cryptographic keys. Annual key rotation is performed. Hardware security modules (HSMs) protect the keys, with access restricted to the Chief Technical Officer.
+- **Passwords:** Stored using a one-way encrypted hash. User IDs and passwords are transmitted only in encrypted form.
+
+## Identity and access management
+
+Plum applies the **principle of least privilege** across all systems. Access to data and infrastructure is role-based, with two primary roles on the platform—Super Admin and Admin—each with defined permissions. Additional controls include:
+
+- **SSO support** via SAML 2.0, OAuth 2.0, and WS-Federation for seamless, secure authentication.
+- **Two-factor authentication** enforced for privileged account access to tenant data.
+- **Audit logs** retained for a minimum of 180 days, covering all successful and unsuccessful login attempts by privileged accounts.
+- **VPN access** required for all employees connecting to internal systems remotely.
+- **Access revocation** as part of a formal employee termination and offboarding process.
+
+## Security operations
+
+Plum maintains a **Security Operations Center (SOC)** that monitors the platform around the clock for threats and anomalies. Key operational controls include:
+
+- Centralized log analysis and real-time alerting for security events.
+- Web Application Firewall (WAF) with rate limiting to mitigate DDoS attacks.
+- File integrity monitoring and network intrusion detection.
+- Documented incident response plan with chain-of-custody management.
+- Annual business continuity and disaster recovery (BCP/DR) testing, with a **6-hour RTO and RPO**.
+- Daily data backups to AWS, with a multi-AZ active-active deployment for high availability.
+
+## Vulnerability management
+
+Plum conducts **periodic vulnerability scans** at the operating system, network, and application layers. In addition to internal scanning, third-party security experts perform independent vulnerability assessments and penetration testing. All identified issues are remediated before deployment to production. Results of penetration tests are available to customers upon request.
+
+If you identify a potential security issue, contact the security team at [cs@xoxoday.com](mailto:cs@xoxoday.com). Reports are reviewed and validated within approximately 90 days.
+
+## Compliance
+
+Plum's security architecture adheres to internationally recognized standards. The platform is certified under **ISO 27001**, **SOC 2 Type II**, and has completed a **CSA STAR Level 1** self-assessment. Compliance with **GDPR**, the **India DPDP Act**, and **CPRA** is maintained through dedicated data privacy controls, Data Processing Agreements, and annual third-party audits.
+
+<Note>
+  Compliance documentation—including SOC 2 and ISO 27001 reports—is available upon request. Reach out to your Plum account representative or contact [cs@xoxoday.com](mailto:cs@xoxoday.com) to request access.
+</Note>
+
+## Explore further
+
+<CardGroup cols={2}>
+  <Card title="Data Privacy and Compliance" href="/security/data-privacy">
+    Learn what data Plum collects, how it is stored, and how GDPR, DPDP Act, and other privacy regulations are addressed.
+  </Card>
+
+  <Card title="Certifications and Standards" href="/security/certifications">
+    See the full list of Plum's security certifications—ISO 27001, SOC 2, CSA STAR, and more—and what each one means for you.
+  </Card>
+</CardGroup>

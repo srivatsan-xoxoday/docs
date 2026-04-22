@@ -1,0 +1,98 @@
+---
+title: "API Usage Guidelines and Best Practices"
+description: "Understand Plum API rate limits, sandbox testing, idempotency, request formatting, and going live with the production environment."
+---
+
+Following these guidelines keeps your integration reliable, performant, and production-ready. Whether you are building for the first time or preparing to go live, the practices below help you avoid common pitfalls and build a robust rewards experience.
+
+## Request format
+
+All Plum APIs accept and return JSON. Apply these rules to every request:
+
+- Set `Content-Type: application/json` on all POST requests.
+- Encode all string values as UTF-8.
+- Do not include trailing commas in JSON bodies.
+- Send all monetary amounts in the currency's lowest denomination (e.g., cents for USD) unless the specific endpoint documentation states otherwise.
+
+## Rate limiting
+
+Plum throttles API clients that send more than **5,000 requests per second**. If your integration requires a higher throughput limit, contact your Plum implementation manager to discuss a custom arrangement.
+
+When you exceed the rate limit, the API returns an HTTP `429 Too Many Requests` response. Implement exponential backoff with jitter in your retry logic to handle these gracefully.
+
+## Idempotency and the `poNumber` parameter
+
+For order-placement endpoints, always pass a unique `poNumber` (purchase order number) with every request. This value is your idempotency key.
+
+- Use a UUID or another globally unique identifier for each order.
+- If you receive a `5xx` error from `/place-order`, do **not** immediately retry with a new `poNumber`. Instead, call `GET /get-order-details` with the original `poNumber` to check whether the order was created. If no order exists, it is safe to retry.
+- A successful `poNumber` cannot be reused. However, you can reuse a `poNumber` from a **cancelled** order.
+
+<Warning>
+  Sending the same `poNumber` for a completed order will result in an error. Always store your `poNumber` values and the corresponding `orderID` from the response.
+</Warning>
+
+## Sandbox environment
+
+Plum provides a dedicated sandbox environment for development and testing. Use the sandbox base URL while building your integration:
+
+**Sandbox base URL:** `https://canvas.xoxoday.com/chef`
+
+Key differences between sandbox and production:
+
+| Aspect | Sandbox | Production |
+|--------|---------|------------|
+| Client ID / Secret | Sandbox-specific | Production-specific |
+| Product catalog | Limited subset | Full catalog |
+| Redirect URI validation | Relaxed (any URI accepted) | Strict (must match registered URIs) |
+| Real transactions | No | Yes |
+
+Request access to the sandbox through your Plum implementation manager or the admin portal. Test all your integration flows in sandbox before switching to production credentials.
+
+## Preview and testing
+
+The sandbox environment mirrors the production workflow so you can test:
+
+- OAuth token generation and refresh
+- Catalog browsing (`GET /get-filters`, `GET /get-vouchers`)
+- Placing test orders (`POST /place-order`)
+- Webhook delivery and signature verification
+
+For interactive testing, you can also use the request builder in the [Plum developer docs](https://developers.xoxoday.com/reference).
+
+## Multi-currency and forex
+
+When your account's base currency differs from a product's native currency, Plum applies a daily exchange rate at the time the order is placed.
+
+- Exchange rates are sourced from [currencylayer.com](https://currencylayer.com) and locked daily at **12:01 IST (06:31 UTC)**.
+- The applied exchange rate is included in the order response so you can reconcile costs accurately.
+- To display the effective price before ordering, use the exchange rate returned in the catalog endpoints.
+
+## Go-live checklist
+
+Before switching from sandbox to production, complete the following steps:
+
+<Steps>
+  <Step title="Grant production access">
+    Create user profiles in the Plum dashboard for every team member who needs access. Assign roles, whitelist IP addresses, and enable two-factor authentication.
+  </Step>
+  <Step title="Fund your wallet">
+    Recharge your Plum virtual wallet with sufficient funds to cover anticipated reward disbursements. Set up low-balance alerts to avoid failed transactions.
+  </Step>
+  <Step title="Swap credentials and URLs">
+    Replace your sandbox Client ID, Secret ID, and base URL with your production credentials. Verify that all endpoint URLs point to `https://accounts.xoxoday.com/chef`.
+  </Step>
+  <Step title="Configure production webhooks">
+    Register your production webhook endpoint URL in the Plum dashboard. Confirm that your server can receive HTTPS POST requests and responds with an HTTP `200` acknowledgement.
+  </Step>
+  <Step title="Verify end-to-end flows">
+    Place a small test order in production to confirm authentication, order placement, and webhook delivery all work correctly before opening your integration to users.
+  </Step>
+</Steps>
+
+## Best practices summary
+
+- Always store the raw request and response for every API call for audit and debugging purposes.
+- Implement automatic token refresh to avoid service interruptions.
+- Use the `GET /get-order-details` endpoint to reconcile any orders where you did not receive a clear success or failure response.
+- Subscribe to Plum's catalog update notifications (sent to Super Admin email) to stay aware of product availability changes, denomination updates, and gift card removals.

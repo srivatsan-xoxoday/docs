@@ -1,0 +1,132 @@
+---
+title: "Gift Cards API Webhooks: Order Status Updates"
+description: "Configure webhooks to receive real-time order status notifications from the Plum Gift Cards API, including delivered and failed events."
+sidebarTitle: "Webhooks"
+---
+
+Webhooks let Plum push order status updates to your server in real time, so you do not need to poll `GET /get-order-details` to find out when an order is fulfilled. When an order changes state—for example, when a pending order is fulfilled or a voucher delivery fails—Plum sends an HTTP POST request to the URL you register in the dashboard.
+
+<Note>
+  Your webhook endpoint must be accessible over **HTTPS**. Plum will not deliver events to HTTP endpoints in production.
+</Note>
+
+## Available webhook events
+
+| Event | Trigger |
+|-------|---------|
+| `order.placed` | Fired when an order is received and initially created in the system. |
+| `order.fulfilled` | Fired when vouchers are successfully generated and the order is complete. |
+| `order.failed` | Fired when an order cannot be fulfilled (e.g., out-of-stock, processing error). |
+
+## Register a webhook endpoint
+
+<Steps>
+  <Step title="Log in to the Plum admin portal">
+    Sign in with Super Admin credentials and navigate to the API or Webhooks settings section.
+  </Step>
+  <Step title="Add your endpoint URL">
+    Enter your HTTPS webhook endpoint URL. This is the URL Plum will POST event payloads to. Ensure your server can receive POST requests at this URL.
+  </Step>
+  <Step title="Select events to subscribe to">
+    Choose which events you want to receive. You can subscribe to `order.placed`, `order.fulfilled`, and `order.failed` individually.
+  </Step>
+  <Step title="Save and test">
+    Save the configuration. Use the **Test Webhook** feature in the dashboard to send a sample payload to your endpoint and verify it responds correctly.
+  </Step>
+</Steps>
+
+## Example webhook payload
+
+When an order is fulfilled, Plum delivers a payload similar to the following:
+
+```json
+{
+  "event": "order.fulfilled",
+  "timestamp": "2024-01-01T10:05:00.000Z",
+  "data": {
+    "orderId": "ORD_20240101_001",
+    "poNumber": "a3f4b2c1-9d8e-4f6a-b7c2-1e3d5a9b8c7f",
+    "orderStatus": "completed",
+    "deliveryStatus": "Delivered",
+    "vouchers": [
+      {
+        "voucherCode": "GIFT1234ABCD",
+        "pin": "",
+        "type": "code",
+        "productName": "Amazon Gift Card",
+        "denomination": 25,
+        "currency": "USD",
+        "validity": "2025-12-31"
+      }
+    ],
+    "totalAmount": 25,
+    "currency": "USD"
+  }
+}
+```
+
+## Example failed order payload
+
+```json
+{
+  "event": "order.failed",
+  "timestamp": "2024-01-01T10:07:00.000Z",
+  "data": {
+    "orderId": "ORD_20240101_002",
+    "poNumber": "b4e5c3d2-0e9f-5g7b-c8d3-2f4e6b0c9d8g",
+    "orderStatus": "completed",
+    "deliveryStatus": "Canceled",
+    "errorCode": "PLE10024",
+    "errorMessage": "Vouchers are out of stock"
+  }
+}
+```
+
+## Verify the webhook signature
+
+Plum signs each webhook payload so you can verify the request came from Plum and was not tampered with in transit. The signature is included in the request headers.
+
+To verify a webhook:
+
+<Steps>
+  <Step title="Extract the signature header">
+    Read the `X-Xoxoday-Signature` header value from the incoming request.
+  </Step>
+  <Step title="Compute the expected signature">
+    Using your webhook secret (available in the Plum dashboard), compute an HMAC-SHA256 hash of the raw request body.
+
+    ```javascript
+    const crypto = require('crypto');
+
+    function verifyWebhookSignature(rawBody, signature, secret) {
+      const expectedSignature = crypto
+        .createHmac('sha256', secret)
+        .update(rawBody)
+        .digest('hex');
+      return crypto.timingSafeEqual(
+        Buffer.from(signature),
+        Buffer.from(expectedSignature)
+      );
+    }
+    ```
+  </Step>
+  <Step title="Compare signatures">
+    If the computed HMAC matches the `X-Xoxoday-Signature` header, the payload is authentic. If they do not match, reject the request with an HTTP `400` response.
+  </Step>
+</Steps>
+
+<Warning>
+  Always verify the webhook signature before processing the event payload. Never process webhooks from unverified sources.
+</Warning>
+
+## Acknowledge webhook delivery
+
+Your endpoint must respond with an HTTP `200 OK` status within a reasonable timeout (typically 5–10 seconds) to confirm receipt. If Plum does not receive a `200` response, it treats the delivery as failed.
+
+## Retry behavior
+
+If your endpoint does not return `200`, Plum retries delivery with exponential backoff. Ensure your webhook handler is idempotent—processing the same event more than once should produce the same result and not create duplicate records or fulfillments.
+
+<Tip>
+  To test your webhook integration in the sandbox environment, use the **Test Webhook** feature in the Plum dashboard or call the test webhook endpoint documented at [developers.xoxoday.com/reference](https://developers.xoxoday.com/reference).
+</Tip>

@@ -1,0 +1,141 @@
+---
+title: "Manage Wallets and Payments"
+description: "Learn how to recharge your Plum company wallet, choose a payment method, set per-admin spending thresholds, and download payment reports."
+---
+
+Plum uses a pre-funded company wallet as the central balance for all reward disbursements. Before you can send gift cards, reward links, or reward points, your wallet needs to have sufficient funds. This page explains how to top up your wallet, update billing details, set per-admin spending limits, and review your payment history.
+
+<Note>
+  Only Super Admins can recharge the company wallet. Admin users can spend from the wallet up to their assigned threshold, but cannot add funds.
+</Note>
+
+## How the Plum wallet works
+
+When you send any reward through Plum—whether a gift card, reward link, or reward points transfer—the value is deducted from your company wallet balance in real time. The wallet acts as a prepaid ledger: you top it up in advance, and Plum draws from it automatically as rewards are issued.
+
+Key characteristics of the wallet:
+
+- **Pre-funded**: Funds must be available before rewards can be sent. Plum does not extend credit.
+- **Centralized**: All admins within the account draw from the same company wallet.
+- **Threshold-controlled**: Super Admins can cap how much individual Admins can spend by setting a threshold per user.
+- **Auditable**: Every debit and credit is logged with a timestamp, amount, and invoice reference.
+
+## Recharge (top up) the company wallet
+
+<Steps>
+  <Step title="Go to the Wallet section">
+    Click the **Wallet icon** in the main navigation menu of the admin dashboard.
+  </Step>
+  <Step title="Initiate a recharge">
+    Click the **Recharge** or **Add Funds** button to begin the top-up flow.
+  </Step>
+  <Step title="Enter the recharge amount">
+    Type the amount you want to add to your wallet. Review any applicable processing fees before proceeding.
+  </Step>
+  <Step title="Select or confirm a payment method">
+    Choose your preferred payment method. Plum supports bank transfer, credit/debit card, and other methods depending on your region.
+  </Step>
+  <Step title="Confirm the transaction">
+    Review the summary and confirm. Once the payment is processed, the funds appear in your wallet balance immediately (or within the processing window for bank transfers).
+  </Step>
+</Steps>
+
+## Update billing address during recharge
+
+You can update your billing address at the point of recharge without needing to change your account settings separately.
+
+<Steps>
+  <Step title="Start the recharge flow">
+    Begin a wallet top-up as described above.
+  </Step>
+  <Step title="Edit billing details">
+    On the payment screen, locate the billing address section and click **Edit** or **Change**.
+  </Step>
+  <Step title="Enter the updated address">
+    Enter the new billing address and confirm. This address will appear on the invoice generated for this transaction.
+  </Step>
+</Steps>
+
+<Info>
+  The billing address you enter at recharge is used for that specific invoice. To change your default billing information for all future invoices, contact [cs@xoxoday.com](mailto:cs@xoxoday.com).
+</Info>
+
+## Set spending thresholds for admins
+
+A threshold is a hard limit on how much an individual Admin can spend from the company wallet. It gives Super Admins a way to enforce per-person or per-team budget controls without restricting their own access.
+
+<Steps>
+  <Step title="Go to Settings > Admins">
+    Navigate to **Settings \> Admins** in the dashboard.
+  </Step>
+  <Step title="Open the actions menu for the admin">
+    Click the three-dot menu (**...**) in the **Actions** column next to the Admin user you want to update.
+  </Step>
+  <Step title="Select Update Threshold Limit">
+    Click **Update Threshold Limit** from the actions menu.
+  </Step>
+  <Step title="Enter the new threshold">
+    In the prompt, enter the maximum amount this Admin is permitted to spend, then click **Update**.
+  </Step>
+</Steps>
+
+<Warning>
+  Thresholds apply only to Admin users. Super Admins always have unrestricted access to the full wallet balance, regardless of any threshold value. If you need to restrict a Super Admin's spending, you must first change their role to Admin.
+</Warning>
+
+## View payment history and download reports
+
+All wallet recharges and reward transactions are available in the payment report. You can filter, review, and export this data at any time.
+
+<Steps>
+  <Step title="Open the Wallet section">
+    Click the **Wallet icon** in the main navigation.
+  </Step>
+  <Step title="Click Transaction History">
+    Select **Transaction History** to open the full payment log.
+  </Step>
+  <Step title="Review transaction details">
+    Each row in the log includes:
+
+    - Invoice date
+    - Transaction amount
+    - Source of recharge (who or what triggered the payment)
+    - Current balance after the transaction
+    - Payment status
+    - Invoice reference and notes
+  </Step>
+  <Step title="Apply filters">
+    Use the filter controls to scope the view by date range, transaction type, or status. This is useful for reconciling a billing period or locating a specific payment.
+  </Step>
+  <Step title="Download the report">
+    Click **Download** in the top-right corner to export the report. You can also choose to export as Excel and have it sent to your email.
+  </Step>
+</Steps>
+
+<Tip>
+  Download your payment report at the end of each billing cycle and cross-reference it with campaign spend summaries in the Reward Code or Reward Link reports. This gives you a complete picture of budget utilization per program.
+</Tip>
+
+## Frequently asked questions
+
+<AccordionGroup>
+  <Accordion title="What happens if the wallet runs out of funds mid-campaign?">
+    Reward delivery will fail for any transaction that exceeds the available wallet balance. Plum does not extend credit. Top up your wallet before the balance approaches zero to avoid delivery interruptions, especially for high-volume campaigns.
+  </Accordion>
+
+  <Accordion title="Can an Admin recharge the wallet if their threshold allows it?">
+    No. Wallet recharges are restricted to Super Admins regardless of threshold settings. Thresholds only govern how much an Admin can spend from an existing balance—they do not grant recharge permissions.
+  </Accordion>
+
+  <Accordion title="Is there a minimum recharge amount?">
+    Minimum recharge amounts depend on your account's currency and region. Contact [cs@xoxoday.com](mailto:cs@xoxoday.com) for details specific to your account.
+  </Accordion>
+
+  <Accordion title="Can I set a threshold of zero to block an admin from spending?">
+    Yes. Setting a threshold of zero prevents an Admin from initiating any reward transactions. This is effectively the same as suspending their ability to spend, without removing them from the account.
+  </Accordion>
+
+  <Accordion title="How do I get an invoice for a wallet top-up?">
+    Invoices are generated automatically for every recharge and are accessible in the Transaction History view. You can also download the payment report in Excel format or have it emailed to you directly from the export flow.
+  </Accordion>
+</AccordionGroup>

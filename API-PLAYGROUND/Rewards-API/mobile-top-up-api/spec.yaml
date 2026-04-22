@@ -1,0 +1,876 @@
+openapi: 3.0.3
+
+info:
+  title: Xoxoday Rewards API – Mobile Top-Up
+  version: "1.2"
+  description: |
+    Mobile Top-Up API endpoints for browsing the catalog, looking up operators,
+    placing orders, and reporting.
+
+    All operations dispatch to `POST /v1/oauth/api`. Virtual path suffixes are used
+    for playground differentiation since OpenAPI does not allow multiple POST operations
+    on the same path.
+
+    **Host split:**
+    - `getFilters`, `getBalance`, `paymentHistory` → `stagingstores.xoxoday.com`
+    - `getMobileTopUpCatalog`, `getMobileOperator`, `placeOrder`, `getOrderDetails`, `getOrderHistory` → `accounts.xoxoday.com`
+
+    **Get Balance** sends parameters as URL query string (not request body).
+
+servers:
+  - url: https://stagingstores.xoxoday.com/chef/v1/oauth/api
+    description: Sandbox
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Catalog
+  - name: Orders
+  - name: Reporting
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: "`Authorization: Bearer <access_token>`"
+
+  schemas:
+    OrderHistoryItem:
+      type: object
+      properties:
+        orderId: { type: number }
+        orderDate: { type: string }
+        email: { type: string }
+        deliveryStatus: { type: string }
+        poNumber: { type: string }
+        tag: { type: string, nullable: true }
+        orderTotal: { type: number }
+        rawOrderTotal: { type: number, nullable: true }
+        orderDiscount: { type: number }
+        amountCharged: { type: number }
+        currencyValue: { type: number }
+        currencyCode: { type: string }
+        products:
+          type: array
+          items:
+            type: object
+            properties:
+              productId: { type: number }
+              productName: { type: string }
+              receiverMobileNumber: { type: string }
+              receiverEmail: { type: string }
+              price: { type: number }
+              quantity: { type: number }
+              orderProductStatus: { type: string }
+              currency: { type: string }
+        voucherDetails:
+          type: array
+          items:
+            type: object
+            properties:
+              orderId: { type: number }
+              productId: { type: number }
+              productName: { type: string }
+              currencyCode: { type: string }
+              productStatus: { type: string }
+              denomination: { type: number }
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid access token.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string, example: Unauthorized }
+    BadRequest:
+      description: Invalid request body or parameters.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string }
+              message: { type: string }
+    BadGateway:
+      description: Upstream service error.
+
+paths:
+
+  # ── Get Filter API ────────────────────────────────────────────────────────────
+  # Real URL: POST https://stagingstores.xoxoday.com/chef/v1/oauth/api
+
+  /getFilters:
+    post:
+      operationId: topupGetFilters
+      summary: Get Filter API
+      description: >
+        Retrieve available filters for the mobile top-up catalog.
+
+
+        **Real URL:** `POST https://stagingstores.xoxoday.com/chef/v1/oauth/api`
+      tags: [Catalog]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  enum: [plumProAPI.mutation.getFilters]
+                  default: plumProAPI.mutation.getFilters
+                tag:
+                  type: string
+                  enum: [plumProAPI]
+                  default: plumProAPI
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        filterGroupCode:
+                          type: string
+                          description: "Filter category (e.g. `Country`, `price`, `currency`)."
+                          example: Country
+                        includeFilters:
+                          type: string
+                          example: usa
+                        excludeFilters:
+                          type: string
+                          example: uae
+            example:
+              query: plumProAPI.mutation.getFilters
+              tag: plumProAPI
+              variables:
+                data:
+                  filterGroupCode: Country
+                  includeFilters: usa
+                  excludeFilters: uae
+      responses:
+        "200":
+          description: Filter list returned successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      getFilters:
+                        type: object
+                        properties:
+                          status: { type: number }
+                          data:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                filterGroupName: { type: string }
+                                filterGroupDescription: { type: string }
+                                filterGroupCode: { type: string }
+                                filters:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      filterValue: { type: string }
+                                      isoCode: { type: string }
+                                      filterValueCode: { type: string }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ── Get Balance API ───────────────────────────────────────────────────────────
+  # Real URL: POST https://stagingstores.xoxoday.com/chef/v1/oauth/api
+  # Params sent as URL query string, not request body.
+
+  /getBalance:
+    post:
+      operationId: topupGetBalance
+      summary: Get Balance API
+      description: >
+        Fetch the available balance in your Admin wallet.
+        Parameters are passed as **URL query string** for this endpoint,
+        not as a JSON body.
+
+
+        **Real URL:** `POST https://stagingstores.xoxoday.com/chef/v1/oauth/api`
+      tags: [Catalog]
+      parameters:
+        - name: query
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [plumProAPI.query.getBalance]
+            default: plumProAPI.query.getBalance
+        - name: tag
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [plumProAPI]
+            default: plumProAPI
+        - name: variables
+          in: query
+          required: true
+          schema:
+            type: string
+            default: '{"data":{}}'
+          description: URL-encoded JSON. Pass `{"data":{}}`.
+      responses:
+        "200":
+          description: Balance fetched successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      getBalance:
+                        type: object
+                        properties:
+                          status: { type: number }
+                          data:
+                            type: object
+                            properties:
+                              value: { type: number }
+                              currency: { type: string }
+              example:
+                data:
+                  getBalance:
+                    status: 1
+                    data:
+                      value: 5000
+                      currency: USD
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ── Get Mobile Top-Up Catalog ─────────────────────────────────────────────────
+  # Real URL: POST https://accounts.xoxoday.com/chef/v1/oauth/api
+
+  /getMobileTopUpCatalog:
+    post:
+      operationId: topupGetCatalog
+      summary: Get Mobile Top-Up Catalog
+      description: >
+        Fetch available mobile top-up products. Pass `"categoryType": "topup"`.
+        Use `parentProductId` to scope results to a specific operator's denominations.
+
+
+        **Real URL:** `POST https://accounts.xoxoday.com/chef/v1/oauth/api`
+      tags: [Catalog]
+      servers:
+        - url: https://accounts.xoxoday.com/chef/v1/oauth/api
+          description: Production
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  enum: [plumProAPI.mutation.getVouchers]
+                  default: plumProAPI.mutation.getVouchers
+                tag:
+                  type: string
+                  enum: [plumProAPI]
+                  default: plumProAPI
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      type: object
+                      required: [categoryType]
+                      properties:
+                        categoryType:
+                          type: string
+                          enum: [topup]
+                          default: topup
+                          description: Must be `"topup"` for this endpoint.
+                        parentProductId:
+                          type: integer
+                          description: Scope results to a specific operator's product tree.
+                          example: 55132
+                        limit:
+                          type: integer
+                          example: 10
+                        page:
+                          type: integer
+                          example: 1
+                        includeProducts:
+                          type: string
+                          description: Comma-separated product IDs to include.
+                          example: "3211"
+                        excludeProducts:
+                          type: string
+                          description: Comma-separated product IDs to exclude.
+                          example: "43211"
+                        exchangeRate:
+                          type: integer
+                          description: Pass `1` to include FX exchange rates.
+                          example: 1
+                        filters:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              key: { type: string }
+                              value: { type: string }
+            example:
+              query: plumProAPI.mutation.getVouchers
+              tag: plumProAPI
+              variables:
+                data:
+                  parentProductId: 55132
+                  categoryType: topup
+                  limit: 10
+                  page: 1
+                  includeProducts: "3211"
+                  excludeProducts: "43211"
+                  exchangeRate: 1
+      responses:
+        "200":
+          description: Mobile top-up catalog returned successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      getVouchers:
+                        type: object
+                        properties:
+                          status: { type: number }
+                          data:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                productId: { type: number }
+                                name: { type: string }
+                                description: { type: string }
+                                orderQuantityLimit: { type: number }
+                                imageUrl: { type: string }
+                                currencyCode: { type: string }
+                                countryName: { type: string }
+                                valueType: { type: string }
+                                maxValue: { type: number }
+                                minValue: { type: number }
+                                valueDenominations: { type: string }
+                                deliveryType: { type: string }
+                                fee: { type: number }
+                                discount: { type: number }
+                                exchangeRate: { type: number }
+                                isPhoneNumberMandatory: { type: boolean }
+                                parentProductId: { type: number, nullable: true }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ── Get Mobile Operator API ───────────────────────────────────────────────────
+  # Real URL: POST https://accounts.xoxoday.com/chef/v1/oauth/api
+
+  /getMobileOperator:
+    post:
+      operationId: topupGetMobileOperator
+      summary: Get Mobile Operator API
+      description: >
+        Look up the mobile operator for a given phone number.
+        Use the returned operator info to select the correct top-up product.
+
+
+        **Real URL:** `POST https://accounts.xoxoday.com/chef/v1/oauth/api`
+      tags: [Catalog]
+      servers:
+        - url: https://accounts.xoxoday.com/chef/v1/oauth/api
+          description: Production
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  enum: [plumProAPI.mutation.lookupMobileNumber]
+                  default: plumProAPI.mutation.lookupMobileNumber
+                tag:
+                  type: string
+                  enum: [plumProAPI]
+                  default: plumProAPI
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      type: object
+                      required: [mobile_number]
+                      properties:
+                        mobile_number:
+                          type: string
+                          description: Full phone number including country code.
+                          example: "+12125551234"
+            example:
+              query: plumProAPI.mutation.lookupMobileNumber
+              tag: plumProAPI
+              variables:
+                data:
+                  mobile_number: "+12125551234"
+      responses:
+        "200":
+          description: Mobile operator details returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      lookupMobileNumber:
+                        type: object
+                        properties:
+                          status: { type: number }
+                          operator: { type: string, description: Detected mobile operator name. }
+                          countryCode: { type: string, description: ISO country code. }
+                          productId: { type: number, description: Matched product/operator ID. }
+              example:
+                data:
+                  lookupMobileNumber:
+                    status: 1
+                    operator: "AT&T"
+                    countryCode: US
+                    productId: 55132
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ── Place Order API ───────────────────────────────────────────────────────────
+  # Real URL: POST https://accounts.xoxoday.com/chef/v1/oauth/api
+
+  /placeOrder:
+    post:
+      operationId: topupPlaceOrder
+      summary: Place Order API
+      description: >
+        Place a mobile top-up order. `userMeta` with recipient phone details is
+        required. Set `performOperatorValidation: 1` to validate the operator
+        before placing the order.
+
+
+        **Real URL:** `POST https://accounts.xoxoday.com/chef/v1/oauth/api`
+      tags: [Orders]
+      servers:
+        - url: https://accounts.xoxoday.com/chef/v1/oauth/api
+          description: Production
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  enum: [plumProAPI.mutation.placeOrder]
+                  default: plumProAPI.mutation.placeOrder
+                tag:
+                  type: string
+                  enum: [plumProAPI]
+                  default: plumProAPI
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      type: object
+                      required: [productId, quantity, denomination, poNumber, userMeta]
+                      properties:
+                        productId:
+                          type: integer
+                          description: Top-up product ID to order.
+                          example: 15365
+                        quantity:
+                          type: integer
+                          example: 1
+                        denomination:
+                          type: number
+                          description: Top-up amount.
+                          example: 20
+                        email:
+                          type: string
+                          format: email
+                          example: your.email@example.com
+                        tag:
+                          type: string
+                          example: Rewarding
+                        poNumber:
+                          type: string
+                          description: Must be unique per order.
+                          example: PO12662
+                        notifyReceiverEmail:
+                          type: integer
+                          enum: [0, 1]
+                          example: 1
+                        notifyAdminEmail:
+                          type: integer
+                          enum: [0, 1]
+                          example: 0
+                        performOperatorValidation:
+                          type: integer
+                          enum: [0, 1]
+                          description: "`1` = validate the operator before placing the order."
+                          example: 0
+                        userMeta:
+                          type: object
+                          required: [topupPhoneCode, topupPhoneNumber]
+                          description: Recipient phone details for the top-up.
+                          properties:
+                            topupPhoneCode:
+                              type: string
+                              description: Country calling code for the recipient's number.
+                              example: "+91"
+                            topupPhoneNumber:
+                              type: string
+                              description: Recipient's phone number (without country code).
+                              example: "9857535678"
+            example:
+              query: plumProAPI.mutation.placeOrder
+              tag: plumProAPI
+              variables:
+                data:
+                  productId: 15365
+                  quantity: 1
+                  denomination: 20
+                  email: your.email@example.com
+                  tag: Rewarding
+                  poNumber: PO12662
+                  notifyReceiverEmail: 1
+                  notifyAdminEmail: 0
+                  performOperatorValidation: 0
+                  userMeta:
+                    topupPhoneCode: "+91"
+                    topupPhoneNumber: "9857535678"
+      responses:
+        "200":
+          description: Top-up order placed successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      placeOrder:
+                        type: object
+                        properties:
+                          status: { type: number }
+                          data:
+                            type: object
+                            properties:
+                              orderId: { type: number }
+                              orderTotal: { type: number }
+                              currencyCode: { type: string }
+                              amountCharged: { type: number }
+                              orderStatus: { type: string }
+                              deliveryStatus: { type: string }
+                              quantity: { type: number }
+                              voucherDetails:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    orderId: { type: number }
+                                    productId: { type: number }
+                                    productName: { type: string }
+                                    currencyCode: { type: string }
+                                    productStatus: { type: string }
+                                    denomination: { type: number }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ── Get Order Details API ─────────────────────────────────────────────────────
+  # Real URL: POST https://accounts.xoxoday.com/chef/v1/oauth/api
+
+  /getOrderDetails:
+    post:
+      operationId: topupGetOrderDetails
+      summary: Get Order Details API
+      description: >
+        Fetch details for a specific top-up order using either `poNumber` or `orderId`.
+
+
+        **Real URL:** `POST https://accounts.xoxoday.com/chef/v1/oauth/api`
+      tags: [Orders]
+      servers:
+        - url: https://accounts.xoxoday.com/chef/v1/oauth/api
+          description: Production
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  enum: [plumProAPI.mutation.getOrderDetails]
+                  default: plumProAPI.mutation.getOrderDetails
+                tag:
+                  type: string
+                  enum: [plumProAPI]
+                  default: plumProAPI
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        poNumber:
+                          type: string
+                          description: PO number passed at order time. Use this OR `orderId`.
+                          example: PO123
+                        orderId:
+                          type: integer
+                          nullable: true
+                          description: Order ID. Pass `0` or `null` when using `poNumber`.
+                          example: 123
+                        sendMailToReceiver:
+                          type: integer
+                          enum: [0, 1]
+                          example: 0
+            example:
+              query: plumProAPI.mutation.getOrderDetails
+              tag: plumProAPI
+              variables:
+                data:
+                  poNumber: PO123
+                  orderId: 123
+                  sendMailToReceiver: 0
+      responses:
+        "200":
+          description: Order details returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      getOrderDetails:
+                        type: object
+                        properties:
+                          status: { type: number }
+                          data:
+                            type: object
+                            properties:
+                              orderId: { type: number }
+                              orderTotal: { type: number }
+                              currencyCode: { type: string }
+                              amountCharged: { type: number }
+                              orderStatus: { type: string }
+                              deliveryStatus: { type: string }
+                              orderDate: { type: string }
+                              quantity: { type: number }
+                              voucherDetails:
+                                type: array
+                                items:
+                                  type: object
+                                  properties:
+                                    orderId: { type: number }
+                                    productId: { type: number }
+                                    productName: { type: string }
+                                    currencyCode: { type: string }
+                                    productStatus: { type: string }
+                                    denomination: { type: number }
+                                    cancelledQuantity: { type: number }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ── Get Order History API ─────────────────────────────────────────────────────
+  # Real URL: POST https://accounts.xoxoday.com/chef/v1/oauth/api
+
+  /getOrderHistory:
+    post:
+      operationId: topupGetOrderHistory
+      summary: Get Order History API
+      description: >
+        Fetch historical mobile top-up orders within a date range.
+
+
+        **Real URL:** `POST https://accounts.xoxoday.com/chef/v1/oauth/api`
+      tags: [Orders]
+      servers:
+        - url: https://accounts.xoxoday.com/chef/v1/oauth/api
+          description: Production
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  enum: [plumProAPI.mutation.getOrderHistory]
+                  default: plumProAPI.mutation.getOrderHistory
+                tag:
+                  type: string
+                  enum: [plumProAPI]
+                  default: plumProAPI
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        startDate:
+                          type: string
+                          description: "Start date. Format: `YYYY-MM-DD`."
+                          example: "2012-07-25"
+                        endDate:
+                          type: string
+                          description: "End date. Format: `YYYY-MM-DD`."
+                          example: "2012-07-28"
+                        limit:
+                          type: integer
+                          example: 10
+                        page:
+                          type: integer
+                          example: 1
+            example:
+              query: plumProAPI.mutation.getOrderHistory
+              tag: plumProAPI
+              variables:
+                data:
+                  startDate: "2012-07-25"
+                  endDate: "2012-07-28"
+                  limit: 10
+                  page: 1
+      responses:
+        "200":
+          description: Order history returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      getOrderHistory:
+                        type: object
+                        properties:
+                          status: { type: number }
+                          data:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/OrderHistoryItem'
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ── Get Payment Reports API ───────────────────────────────────────────────────
+  # Real URL: POST https://stagingstores.xoxoday.com/chef/v1/oauth/api
+  # Uses top-level "data" key (flat) — not "variables".
+
+  /paymentHistory:
+    post:
+      operationId: topupPaymentHistory
+      summary: Get Payment Reports API
+      description: >
+        Fetch payment/transaction history within a date range.
+
+
+        **Note:** Uses a top-level `"data"` key instead of `"variables"`.
+        Fields are passed directly under `data`.
+
+
+        **Real URL:** `POST https://stagingstores.xoxoday.com/chef/v1/oauth/api`
+      tags: [Reporting]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, data]
+              properties:
+                query:
+                  type: string
+                  enum: [plumProAPI.mutation.paymentHistory]
+                  default: plumProAPI.mutation.paymentHistory
+                tag:
+                  type: string
+                  enum: [plumProAPI]
+                  default: plumProAPI
+                data:
+                  type: object
+                  properties:
+                    startDate:
+                      type: string
+                      description: "Start date. Format: `YYYY-MM-DD`."
+                      example: "2024-01-01"
+                    endDate:
+                      type: string
+                      description: "End date. Format: `YYYY-MM-DD`."
+                      example: "2024-01-30"
+                    limit:
+                      type: integer
+                      example: 100
+                    page:
+                      type: integer
+                      example: 1
+            example:
+              query: plumProAPI.mutation.paymentHistory
+              tag: plumProAPI
+              data:
+                startDate: "2024-01-01"
+                endDate: "2024-01-30"
+                limit: 100
+                page: 1
+      responses:
+        "200":
+          description: Payment report returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      invoice_number: { type: integer }
+                      reference_id: { type: integer }
+                      date: { type: string }
+                      reason: { type: string }
+                      adjusted_amount: { type: integer }
+                      closing_balance: { type: integer }
+                      transaction_status: { type: string }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }

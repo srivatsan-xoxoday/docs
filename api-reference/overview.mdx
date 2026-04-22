@@ -1,0 +1,51 @@
+---
+title: "Plum API Reference: Rewards Integration Guide"
+description: "Plum offers REST APIs for Gift Cards, Reward Points, Reward Links, Perks, and Marketplace—all using OAuth 2.0 and JSON over HTTPS."
+---
+
+Plum by Xoxoday provides a suite of REST APIs that let you programmatically send rewards, manage points balances, distribute reward links, surface employee perks, and integrate the full reward catalog into your own application. Every API uses OAuth 2.0 for authentication and communicates exclusively over HTTPS using JSON-encoded request and response bodies.
+
+## Base URLs
+
+All Plum APIs share the same base URL pattern. Use the sandbox environment while you build and test your integration, then switch to the production URL when you go live.
+
+| Environment | Base URL |
+|-------------|----------|
+| Production  | `https://accounts.xoxoday.com/chef` |
+| Sandbox     | `https://canvas.xoxoday.com/chef` |
+
+<Note>
+  Your Client ID and Secret ID differ between sandbox and production environments. Make sure you use the correct credentials for each environment.
+</Note>
+
+## Authentication summary
+
+Every request to a Plum API must include three HTTP headers: your Client ID, your Secret ID, and a Bearer access token. You generate the access token once via the OAuth 2.0 authorization flow and refresh it before it expires. See the [Authentication guide](/api-reference/authentication) for step-by-step instructions.
+
+## Request format
+
+All request bodies must be valid JSON encoded in UTF-8. Set the `Content-Type` header to `application/json` on every POST request. Responses are also returned as JSON.
+
+## API sections
+
+<CardGroup cols={2}>
+  <Card title="Gift Cards API" icon="gift" href="/api-reference/gift-cards/about">
+    Browse the gift card catalog, place orders for digital vouchers, retrieve order details, and receive real-time order status updates via webhooks.
+  </Card>
+  <Card title="Reward Points API" icon="coins" href="/api-reference/reward-points/about">
+    Create user tokens from your company token, check points balances, and send points directly to individual users within your platform.
+  </Card>
+  <Card title="Reward Link API" icon="link" href="/api-reference/reward-link/about">
+    Send shareable XoxoLinks that let recipients choose their own reward from thousands of options across brands and categories.
+  </Card>
+  <Card title="Perks API" icon="tag" href="/api-reference/perks/about">
+    Fetch and display curated employee perks and exclusive brand offers directly inside your application or HR platform.
+  </Card>
+  <Card title="Marketplace API" icon="store" href="/api-reference/marketplace/about">
+    Embed the full Plum reward catalog in your product, check account balances, place marketplace orders, and process refunds.
+  </Card>
+</CardGroup>
+
+## Developer documentation
+
+The full interactive API reference—including request builders, live response examples, and schema details—is available at [developers.xoxoday.com/reference](https://developers.xoxoday.com/reference).

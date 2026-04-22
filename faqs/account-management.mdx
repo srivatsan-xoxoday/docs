@@ -1,0 +1,123 @@
+---
+title: "Account Management FAQ for Plum Admins"
+description: "Answers to common questions about managing your Plum account—user roles, wallet recharges, billing address, Maker-Checker workflow, and passwords."
+---
+
+This page answers the most common account management questions from Plum administrators. Whether you are setting up your account for the first time, managing a team of admins, or working through billing and wallet settings, the answers below cover the core tasks you will encounter.
+
+<AccordionGroup>
+  <Accordion title="What is the difference between Super Admin and Admin?">
+    Plum has two primary administrative roles:
+
+    - **Super Admin** has complete control over the platform. A Super Admin can configure all platform settings, manage users and roles, set up integrations, access all reports, recharge the wallet, and make any administrative or operational changes. Super Admins also receive platform notifications—such as catalog change alerts and gift card availability updates.
+
+    - **Admin** has access to platform features for day-to-day operations such as creating and managing campaigns, viewing reports, and distributing rewards, but may have restricted access to billing, wallet management, or global configuration settings depending on how your account is set up.
+
+    For organizations with multiple departments, each department can have its own admins operating within department-specific budgets and configurations, while Super Admins retain visibility across the entire account.
+  </Accordion>
+
+  <Accordion title="How do I add a new admin to my Plum account?">
+    New admins can be added from the user management section of the admin dashboard. The process is handled by a Super Admin:
+
+    1. Navigate to **User Management** in the admin dashboard.
+    2. Select **Add User** and enter the new admin's email address and name.
+    3. Assign the appropriate role (Admin or Super Admin).
+    4. Save the changes. The new user will receive an email invitation to access the platform.
+
+    For enterprise accounts, bulk user management is also supported via file upload. Contact your Plum account representative if you need to onboard a large number of users at once.
+
+    <Note>
+      De-provisioning an admin's access requires raising a support ticket with the Plum customer support team, after which access is revoked from the backend.
+    </Note>
+  </Accordion>
+
+  <Accordion title="How do I recharge my wallet?">
+    Your Plum wallet holds the balance used to fund reward distributions. To recharge:
+
+    1. Go to the **Wallet** section in the admin dashboard.
+    2. Select **Recharge Wallet** and enter the amount you wish to add.
+    3. Complete the payment using your organization's preferred payment method.
+
+    The wallet balance is updated once the payment is confirmed. For large or recurring top-ups, your account representative can assist with setting up scheduled recharges or invoice-based funding arrangements.
+
+    If you are using a Maker-Checker workflow (see below), wallet recharge requests may require approval from a second authorized user before the top-up is processed.
+  </Accordion>
+
+  <Accordion title="Can I switch between multiple Plum accounts?">
+    If your organization manages multiple Plum accounts—for example, separate accounts for different geographies, brands, or business units—you can switch between them without logging out. The platform supports multi-account access for users who have been granted access to more than one account.
+
+    Contact your Plum account representative to set up multi-account access for relevant administrators. Role-based access controls ensure that each admin only sees the accounts and data they are authorized to access.
+  </Accordion>
+
+  <Accordion title="How do I update my billing address or company details?">
+    Billing and company profile information can be updated from the account settings section of the admin dashboard by a Super Admin. Typical fields you can update include:
+
+    - Company name and registered address
+    - Billing address
+    - GST/tax identification number (where applicable)
+    - Primary billing contact
+
+    If your billing information is tied to a specific contract or purchase order, contact your Plum account representative before making changes to ensure invoicing is not disrupted.
+  </Accordion>
+
+  <Accordion title="What is the Maker-Checker workflow?">
+    The Maker-Checker workflow is a four-eyes approval control that requires a second authorized user to review and approve certain actions before they take effect. This is commonly used for:
+
+    - High-value reward distributions
+    - Wallet recharge requests above a defined threshold
+    - Changes to campaign settings or budgets
+    - Additions or removal of admin users
+
+    In a Maker-Checker setup, one user (the "Maker") initiates the action, and a second user (the "Checker") approves or rejects it. This control helps prevent unauthorized transactions and is particularly useful for organizations with financial governance requirements.
+
+    To enable or configure the Maker-Checker workflow for your account, contact your Plum account representative.
+  </Accordion>
+
+  <Accordion title="How do I reset my password?">
+    Because Plum supports Single Sign-On (SSO) as the primary authentication method for most enterprise deployments, password resets are typically handled through your organization's identity provider (for example, through your corporate SSO portal), not directly through Plum.
+
+    If you use direct email-based login (not SSO), you can reset your password by:
+
+    1. Visiting the Plum login page.
+    2. Clicking **Forgot Password**.
+    3. Entering your registered email address. A password reset link will be sent to your inbox.
+    4. Following the link to set a new password.
+
+    Passwords must meet Plum's complexity requirements: minimum length, at least one special character, at least one uppercase letter, and at least one number. Passwords cannot be reused (password history is enforced to prevent cycling through previously used passwords).
+
+    If you are locked out and cannot reset your password, contact the Plum support team at [cs@xoxoday.com](mailto:cs@xoxoday.com).
+  </Accordion>
+
+  <Accordion title="Can I access real-time reports and audit logs?">
+    Yes. The Plum admin dashboard includes on-demand, real-time reporting for authorized personnel. Reports can be:
+
+    - Viewed and filtered within the dashboard by date, campaign, recipient, or transaction type.
+    - Exported in CSV or XLSX format for use in external tools.
+    - Saved as templates for recurring report needs.
+
+    All user activity is logged with precise timestamps, and each transaction is tied to an individual user profile. This provides a complete audit trail for financial transparency, compliance reviews, and operational accountability.
+
+    All activity logs are retained in long-term cloud storage. Authentication logs for privileged accounts are retained for a minimum of 180 days.
+  </Accordion>
+
+  <Accordion title="Can someone other than the order placer send gift cards to recipients?">
+    Yes. Plum supports role-based reward distribution, so designated administrators can send gift cards to recipients regardless of who placed the original order. Once gift cards are delivered via secure links to the recipient's email address, they can be activated and redeemed independently by the recipient.
+
+    This flexibility is useful for large organizations where procurement and reward distribution are handled by different teams or departments.
+  </Accordion>
+
+  <Accordion title="How does multi-departmental management work?">
+    Plum allows you to configure independent reward programs for multiple departments within a single account. For each department, you can set:
+
+    - **Goals and KPIs** that define what earns a reward.
+    - **Budgets** with separate wallet allocations per team.
+    - **Roles and permissions** so department-level admins only see their own data.
+    - **Performance metrics** and reporting parameters specific to that team.
+
+    Each department operates its program independently while Super Admins retain account-wide visibility. Real-time budget tracking and reporting are available at both the department and account level.
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+  For account management questions not covered here, contact the Plum support team at [cs@xoxoday.com](mailto:cs@xoxoday.com) or reach out to your dedicated account representative.
+</Tip>

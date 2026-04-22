@@ -1,0 +1,91 @@
+---
+title: "Authenticate with the Plum Perks API"
+description: "Generate an access token for the Plum Perks API using your Client ID and Secret to start fetching offers for your users."
+sidebarTitle: "Authentication"
+---
+
+The Plum Perks API uses OAuth 2.0 Bearer token authentication. Before you can fetch offers, you must exchange your Client ID and Secret for an access token. This page walks you through that process for both the sandbox and production environments.
+
+## Prerequisites
+
+- A Plum admin account with API access enabled
+- Your **Client ID** and **Client Secret** from the Plum admin portal (Settings → API Credentials)
+
+## Authentication endpoints
+
+| Environment | Auth URL |
+|---|---|
+| Sandbox | `https://canvas.xoxoday.com/chef` |
+| Production | `https://accounts.xoxoday.com/chef` |
+
+<Note>
+  Use the sandbox environment for all development and testing. Switch to the production URL only when you are ready to go live.
+</Note>
+
+## Generate an access token
+
+<Steps>
+  <Step title="Locate your credentials">
+    Log in to your Plum admin dashboard, navigate to **Settings → API Credentials**, and copy your **Client ID** and **Client Secret**.
+  </Step>
+  <Step title="Request a token">
+    Send a `POST` request to the authentication endpoint with your credentials:
+
+    ```bash
+    curl --request POST \
+      --url https://accounts.xoxoday.com/chef \
+      --header 'Content-Type: application/json' \
+      --data '{
+        "query": "mutation getToken($client_id: String!, $client_secret: String!) { getToken(client_id: $client_id, client_secret: $client_secret) { access_token token_type expires_in } }",
+        "variables": {
+          "client_id": "YOUR_CLIENT_ID",
+          "client_secret": "YOUR_CLIENT_SECRET"
+        }
+      }'
+    ```
+  </Step>
+  <Step title="Store the access token">
+    A successful response returns an `access_token`. Store it securely and use it in the `Authorization` header for all subsequent Perks API requests.
+
+    ```json
+    {
+      "data": {
+        "getToken": {
+          "access_token": "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9...",
+          "token_type": "Bearer",
+          "expires_in": 3600
+        }
+      }
+    }
+    ```
+  </Step>
+  <Step title="Include the token in requests">
+    Add the token to the `Authorization` header on every Perks API call:
+
+    ```bash
+    curl --request GET \
+      --url https://accounts.xoxoday.com/chef \
+      --header 'Authorization: Bearer YOUR_ACCESS_TOKEN' \
+      --header 'Content-Type: application/json'
+    ```
+  </Step>
+</Steps>
+
+## Token expiry and refresh
+
+Access tokens expire after **3600 seconds** (1 hour). When a token expires, repeat the token generation step to obtain a new one. Store the `expires_in` value and proactively refresh before expiry to avoid interruptions.
+
+<Tip>
+  Cache your access token and refresh it before expiry rather than requesting a new token on every API call. This keeps your integration efficient and avoids rate limit issues.
+</Tip>
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Fetch Offers" icon="tag" href="/api-reference/perks/about">
+    Start fetching available perks and offers for your users.
+  </Card>
+  <Card title="API Overview" icon="book" href="/api-reference/overview">
+    Review the full API reference and all available endpoints.
+  </Card>
+</CardGroup>

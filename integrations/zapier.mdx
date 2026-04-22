@@ -1,0 +1,119 @@
+---
+title: "Zapier Integration"
+description: "Use Plum's Zapier integration to automate reward sending across thousands of apps without writing code—trigger rewards from any workflow."
+---
+
+Zapier is a no-code automation platform that connects over 1,000 apps. With Plum available on Zapier as an action app, you can trigger a reward from any app that has a Zapier integration—a form submission, a new CRM record, a completed survey, an HR event, a Slack message, or anything else. No engineering work required.
+
+## How it works
+
+Every Zapier automation (called a Zap) has two parts: a **Trigger** and an **Action**.
+
+- The **Trigger** is an event in one of your apps—for example, "a new response is submitted in SurveyMonkey" or "a new lead is added in Salesforce."
+- The **Action** is what happens as a result—in this case, sending a reward via Plum.
+
+When the trigger fires, Zapier sends the relevant data (like the respondent's email) to Plum, and Plum delivers the reward automatically.
+
+## Example use cases
+
+| Trigger app | Trigger event | Result |
+| --- | --- | --- |
+| SurveyMonkey | New survey response | Respondent receives a gift card via email |
+| Salesforce | New Lead created | Lead receives a welcome gift |
+| BambooHR | New employee added | Employee receives an onboarding reward |
+| Typeform | New form entry | Respondent receives a personalised reward |
+| Qualtrics | New survey response | Respondent receives an incentive |
+| Zoho CRM | New Lead added | Lead receives a gift card |
+
+## Setting up your first Zap
+
+<Steps>
+  <Step title="Sign in to Zapier">
+    Log in to your Zapier account. If you don't have one, create a free account at zapier.com.
+  </Step>
+  <Step title="Create a new Zap">
+    Click **Create Zap** and choose your Trigger app—for example, SurveyMonkey, Salesforce, or Google Forms. Select the specific trigger event, log in to the trigger app, and test the trigger to confirm data is flowing through.
+  </Step>
+  <Step title="Add Xoxoday Plum as the action">
+    In the Action step, search for and select **Xoxoday Plum**. Choose the action (typically **Send Reward**).
+  </Step>
+  <Step title="Connect your Plum account">
+    If this is your first time using Plum in Zapier, you will be prompted to sign in. Use your existing Plum credentials. New users can create a Plum account and will be guided through the setup.
+  </Step>
+  <Step title="Add funds to your Plum wallet">
+    Before your Zap can send rewards, your Plum account needs a sufficient wallet balance. In the Plum dashboard, click **Add Funds** in the menu bar and complete the payment.
+  </Step>
+  <Step title="Configure the reward action">
+    Fill in the reward fields in Zapier:
+
+    - **Recipient Email** — map this to the email field from your trigger app.
+    - **Campaign** — select the Plum reward campaign to use.
+    - **Reward Amount** — set the denomination if not already defined by the campaign.
+
+    Double-check all mapped fields—especially the recipient email, as this is where the gift card will be delivered.
+  </Step>
+  <Step title="Test the Zap">
+    Click **Test** to send a test reward. Verify the reward is delivered to the expected email address.
+  </Step>
+  <Step title="Turn on the Zap">
+    Once you are satisfied with the test, toggle the Zap to **On**. From this point, every trigger event will automatically send a Plum reward to the recipient.
+  </Step>
+</Steps>
+
+<Tip>
+  Always map the **Recipient Email** field carefully. If the email field is empty or incorrectly mapped, the reward will not be delivered.
+</Tip>
+
+## Example: SurveyMonkey survey completion → send reward
+
+<Steps>
+  <Step title="Set the trigger">
+    In Zapier, select **SurveyMonkey** as the trigger app. Choose **New Response Notification** as the trigger event. Connect your SurveyMonkey account, select the survey, and test the trigger to confirm response data is returned.
+  </Step>
+  <Step title="Add Plum as the action">
+    Select **Xoxoday Plum** as the action app. Connect your Plum account and configure the reward: map the respondent email from SurveyMonkey to the **Recipient Email** field, and select your reward campaign.
+  </Step>
+  <Step title="Turn on the Zap">
+    Test and activate. Every new survey response now triggers an automatic reward delivery.
+  </Step>
+</Steps>
+
+## Example: New Salesforce Lead → send gift card
+
+<Steps>
+  <Step title="Set the trigger">
+    Select **Salesforce** as the trigger app and **New Record** as the trigger event. Choose **Lead** as the object. Log in to Salesforce and test the trigger to confirm lead data is returned.
+  </Step>
+  <Step title="Add Plum as the action">
+    Select **Xoxoday Plum** and configure the reward. Map the lead's email to **Recipient Email** and select the appropriate campaign.
+  </Step>
+  <Step title="Turn on the Zap">
+    Activate the Zap. Whenever a new Lead is created in Salesforce, that lead automatically receives a Plum gift card via email.
+  </Step>
+</Steps>
+
+## Apps commonly connected to Plum via Zapier
+
+**HRMS tools** — BambooHR, Namely, Beekeeper
+
+Use case: send onboarding rewards to new employees, or celebrate work anniversaries.
+
+**Survey tools** — SurveyMonkey, SurveySparrow, SurveyGizmo, Typeform, Qualtrics
+
+Use case: reward survey respondents on submission.
+
+**CRM and sales tools** — Salesforce, Zoho CRM, Freshsales
+
+Use case: reward new leads, re-engage cold prospects, or celebrate closed deals.
+
+**Webinar and event tools** — Zoom, Webex, GoToWebinar
+
+Use case: reward webinar attendees or registrants.
+
+<Note>
+  Plum does not have a direct Zapier integration for every app listed here—these are examples of apps that work well as triggers. Any app available on Zapier can serve as the trigger for a Plum reward action.
+</Note>
+
+## Finding Plum on Zapier
+
+Search for **Xoxoday Plum** in the Zapier app directory. You can also browse pre-built Zap templates from the Plum listing in the Zapier app directory to get started faster with common trigger-action combinations.

@@ -1,0 +1,915 @@
+openapi: 3.0.3
+info:
+  title: Xoxoday Rewards API
+  description: |
+    Xoxoday's Rewards API suite enables clients to integrate voucher ordering,
+    reward link generation, and points management into their platforms.
+
+    ## Authentication
+    All API requests require a Bearer token obtained via OAuth 2.0.
+    - **Access Token Expiry:** 15 days
+    - **Refresh Token Expiry:** 30 days
+    - **Rate Limits:** GetVouchers is capped at 500 requests/day (HTTP 429 on breach)
+
+    ## Environments
+    | Environment | Auth Base URL |
+    |---|---|
+    | Sandbox | `https://canvas.xoxoday.com/chef` |
+    | Production | `https://accounts.xoxoday.com/chef` |
+  version: "1.0.0"
+  contact:
+    name: Xoxoday Help Center
+    url: https://helpcenter.xoxoday.com
+
+servers:
+  - url: https://accounts.xoxoday.com/chef/v1/oauth
+    description: Production
+  - url: https://canvas.xoxoday.com/chef/v1/oauth
+    description: Sandbox / Staging
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Vouchers
+    description: Browse and filter the Xoxoday voucher catalog
+  - name: Orders
+    description: Place and track voucher orders
+  - name: Wallet
+    description: Wallet balance operations
+  - name: Reward Points
+    description: GraphQL-style points fetch and transfer
+  - name: Authentication
+    description: Token generation and validation
+  - name: Marketplace Integration
+    description: |
+      Callback endpoints **your server must implement** for Marketplace/Storefront Integration.
+      Xoxoday calls these during SSO-based storefront sessions to fetch points, validate identity,
+      deduct spent points, and process refunds.
+
+paths:
+
+  # ─────────────────────────────────────────
+  # VOUCHERS
+  # ─────────────────────────────────────────
+  /api/getFilters:
+    post:
+      tags: [Vouchers]
+      summary: Get available catalog filters
+      description: |
+        Returns the list of filters (country, price, category, currency, etc.)
+        that can be applied to the GetVouchers request.
+        Pass empty values to retrieve all available filters.
+      operationId: getFilters
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetFiltersRequest'
+            example:
+              filterGroupCode: ""
+              includeFilters: []
+              excludeFilters: []
+      responses:
+        "200":
+          description: Filter list returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetFiltersResponse'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "429":
+          $ref: '#/components/responses/RateLimitExceeded'
+
+  /api/getVouchers:
+    post:
+      tags: [Vouchers]
+      summary: Get voucher catalog
+      description: |
+        Returns a paginated list of vouchers matching the supplied filters.
+        Xoxoday recommends syncing the catalog 4 times per day (12 AM, 6 AM, 12 PM, 6 PM IST).
+        Cache responses locally to stay within the 500 req/day limit.
+      operationId: getVouchers
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetVouchersRequest'
+            example:
+              filters:
+                country: "IN"
+                currencyCode: "INR"
+                deliveryType: "realtime"
+              exchangeRate: 1
+              page: 1
+              limit: 20
+      responses:
+        "200":
+          description: Voucher list returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetVouchersResponse'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "429":
+          $ref: '#/components/responses/RateLimitExceeded'
+
+  # ─────────────────────────────────────────
+  # ORDERS
+  # ─────────────────────────────────────────
+  /api/placeOrder:
+    post:
+      tags: [Orders]
+      summary: Place a voucher order
+      description: |
+        Places an order for one or more vouchers.
+        - Use a unique `poNumber` for every order — store it with the response `orderID`.
+        - Maximum quantity per product is 10 (see `orderQuantityLimit` in GetVouchers).
+        - For realtime products the maximum response time is 120 seconds.
+        - On 5xx errors, call GetOrderDetails with the `poNumber` before retrying to avoid duplicates.
+      operationId: placeOrder
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PlaceOrderRequest'
+            example:
+              poNumber: "PO-2024-00123"
+              productId: 12345
+              denomination: 500
+              quantity: 2
+              notifyReceiverEmail: 1
+              receiver:
+                name: "Jane Doe"
+                email: "jane.doe@example.com"
+                phone: "+919876543210"
+      responses:
+        "200":
+          description: Order placed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOrderResponse'
+        "400":
+          $ref: '#/components/responses/BadRequest'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+        "500":
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/getOrderDetails:
+    post:
+      tags: [Orders]
+      summary: Get details of a specific order
+      description: |
+        Fetches order details by either `poNumber` or `orderId`.
+        Do **not** use this endpoint to poll delayed-delivery order status — implement webhooks instead.
+      operationId: getOrderDetails
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GetOrderDetailsRequest'
+            examples:
+              byPoNumber:
+                summary: Lookup by PO Number
+                value:
+                  poNumber: "PO-2024-00123"
+                  orderId: null
+              byOrderId:
+                summary: Lookup by Order ID
+                value:
+                  poNumber: ""
+                  orderId: "26663453"
+      responses:
+        "200":
+          description: Order details returned
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetOrderDetailsResponse'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+
+  # ─────────────────────────────────────────
+  # WALLET
+  # ─────────────────────────────────────────
+  /api/getBalance:
+    post:
+      tags: [Wallet]
+      summary: Get admin wallet balance
+      description: |
+        Returns the available balance in the admin wallet.
+        Use the Low Balance Notification in the dashboard rather than polling this endpoint before every order.
+      operationId: getBalance
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Empty body or minimal filter object accepted
+      responses:
+        "200":
+          description: Balance returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetBalanceResponse'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+
+  # ─────────────────────────────────────────
+  # REWARD POINTS (GraphQL-style envelope)
+  # ─────────────────────────────────────────
+  /api:
+    post:
+      tags: [Reward Points]
+      summary: Reward Points operations (fetch / send)
+      description: |
+        All Reward Points operations share a single endpoint and use a GraphQL-style
+        envelope with `query`, `tag`, and `variables`.
+
+        **Supported queries:**
+        - `storesAdmin.query.user_balance` — fetch a user's point balance
+        - `storesAdmin.mutation.sendBalance` — send points to one or more recipients
+      operationId: rewardPointsOperation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RewardPointsRequest'
+            examples:
+              fetchBalance:
+                summary: Fetch user balance
+                value:
+                  query: "storesAdmin.query.user_balance"
+                  tag: "storeAdmin"
+                  variables:
+                    user_data:
+                      email: "user@example.com"
+              sendPoints:
+                summary: Send points to recipients
+                value:
+                  query: "storesAdmin.mutation.sendBalance"
+                  tag: "storeAdmin"
+                  variables:
+                    recipients_data:
+                      sender_email: "admin@company.com"
+                      recipients:
+                        - to_name: "Alice"
+                          to_email: "alice@example.com"
+                          amount: "100"
+                          citation: "Q1 performance bonus"
+      responses:
+        "200":
+          description: Operation completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RewardPointsResponse'
+        "401":
+          $ref: '#/components/responses/Unauthorized'
+
+  # ─────────────────────────────────────────
+  # MARKETPLACE / STOREFRONT INTEGRATION
+  # (Endpoints YOUR server must implement —
+  #  Xoxoday calls these on your side)
+  # ─────────────────────────────────────────
+  /fetchPoints:
+    get:
+      tags: [Marketplace Integration]
+      summary: "[Callback] Fetch user's accrued points"
+      description: |
+        **Implemented by you — called by Xoxoday.**
+        Xoxoday hits this endpoint to retrieve the available points balance for a user
+        before they can redeem on the storefront.
+        The `userId` passed here is the UUID shared during the SSO session.
+      operationId: fetchPoints
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          description: Unique user ID passed during the SSO session
+          schema:
+            type: string
+          example: "jsmth23"
+        - name: walletId
+          in: query
+          required: false
+          description: Optional wallet identifier if the user has multiple wallets
+          schema:
+            type: string
+          example: "Wellness Wallet"
+      responses:
+        "200":
+          description: User balance returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FetchPointsResponse'
+              example:
+                userId: "jsmth23"
+                walletId: "Wellness Wallet"
+                availableAmount: "8925.15"
+                currency: "USD"
+        "404":
+          description: User not found
+
+  /getProfile:
+    get:
+      tags: [Marketplace Integration]
+      summary: "[Callback] Get user profile for identity validation"
+      description: |
+        **Implemented by you — called by Xoxoday.**
+        Xoxoday calls this endpoint at checkout to validate the user's identity
+        as an extra layer of security. The `userId` is the UUID from the SSO session.
+        Note: Xoxoday can reuse the `/fetchPoints` response for profile data if it
+        already contains the required identity fields.
+      operationId: getProfile
+      parameters:
+        - name: userId
+          in: query
+          required: true
+          description: Unique user ID passed during the SSO session
+          schema:
+            type: string
+          example: "cgrant1"
+      responses:
+        "200":
+          description: User profile returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfileResponse'
+              example:
+                userId: "cgrant1"
+                firstName: "Carla"
+                lastName: "Grant"
+                email: "carla@company.com"
+                country: "United States"
+                phone: "+1 415342234"
+        "404":
+          description: User not found
+
+  /updatePoints:
+    post:
+      tags: [Marketplace Integration]
+      summary: "[Callback] Deduct points after order is placed"
+      description: |
+        **Implemented by you — called by Xoxoday.**
+        Xoxoday posts to this endpoint after a user places an order on the storefront,
+        so your system can deduct the points spent. Store the returned `TxnID` —
+        Xoxoday will reference it if a refund is needed later.
+      operationId: updatePoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdatePointsRequest'
+            example:
+              XoxodayTransactionId: "1703475"
+              totalOrderAmount: "500"
+              currency: "USD"
+              comments: ""
+              products:
+                - productId: "28618"
+                  name: "Amazon Gift Card"
+                  quantity: "1"
+                  price: "500"
+                  orderAmount: "500"
+                  category: null
+                  description: ""
+      responses:
+        "200":
+          description: Points deducted; return your internal transaction ID
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UpdatePointsResponse'
+              example:
+                TxnID: "531661"
+
+  /refund:
+    post:
+      tags: [Marketplace Integration]
+      summary: "[Callback] Refund points when an order fails"
+      description: |
+        **Implemented by you — called by Xoxoday.**
+        In the rare case Xoxoday cannot fulfil an order, it calls this endpoint
+        to credit the points back to the user. The `TxnID` is the one your system
+        returned in the `/updatePoints` response.
+      operationId: refundPoints
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefundRequest'
+            example:
+              TxnID: "531661"
+              currency: "USD"
+              userId: "jsmth23"
+              refundAmount: "500"
+              vendor: "XOXODAY"
+      responses:
+        "200":
+          description: Refund processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  message:
+                    type: string
+              example:
+                success: true
+                message: "Refund processed"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# COMPONENTS
+# ─────────────────────────────────────────────────────────────────────────────
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Pass the OAuth 2.0 access token in the Authorization header.
+        Example: `Authorization: Bearer <access_token>`
+
+  # ── Reusable Responses ──────────────────
+  responses:
+    Unauthorized:
+      description: Missing or invalid Bearer token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: true
+            message: "Unauthorized: invalid or expired token"
+
+    BadRequest:
+      description: Invalid request payload
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: true
+            message: "Bad request: missing required field 'poNumber'"
+
+    RateLimitExceeded:
+      description: Daily API rate limit exceeded (HTTP 429)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            error: true
+            message: "Rate limit exceeded. Max 500 requests per day."
+
+    InternalServerError:
+      description: Server-side error — verify with GetOrderDetails before retrying
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  # ── Request Schemas ──────────────────────
+  schemas:
+
+    GetFiltersRequest:
+      type: object
+      properties:
+        filterGroupCode:
+          type: string
+          description: Filter group to scope the response; pass empty string for all
+          example: "voucher_category"
+        includeFilters:
+          type: array
+          items:
+            type: string
+          description: Specific filters to include (works only with filterGroupCode)
+        excludeFilters:
+          type: array
+          items:
+            type: string
+          description: Specific filters to exclude (works only with filterGroupCode)
+
+    GetFiltersResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            getFilters:
+              type: array
+              items:
+                $ref: '#/components/schemas/FilterItem'
+
+    FilterItem:
+      type: object
+      properties:
+        filterName:
+          type: string
+          example: "country"
+        filterValues:
+          type: array
+          items:
+            type: string
+          example: ["IN", "US", "AU"]
+
+    GetVouchersRequest:
+      type: object
+      properties:
+        filters:
+          $ref: '#/components/schemas/VoucherFilters'
+        exchangeRate:
+          type: integer
+          description: Pass 1 to include exchange rate in response
+          example: 1
+        page:
+          type: integer
+          example: 1
+        limit:
+          type: integer
+          example: 20
+
+    VoucherFilters:
+      type: object
+      properties:
+        productName:
+          type: string
+        country:
+          type: string
+          example: "IN"
+        price:
+          type: string
+          description: Price range e.g. "0-1000"
+        minPrice:
+          type: string
+        currencyCode:
+          type: string
+          example: "INR"
+        deliveryType:
+          type: string
+          enum: [realtime, delayed]
+
+    GetVouchersResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            getVouchers:
+              type: object
+              properties:
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Voucher'
+                totalCount:
+                  type: integer
+
+    Voucher:
+      type: object
+      properties:
+        productId:
+          type: integer
+          example: 12345
+        productName:
+          type: string
+          example: "Amazon India Gift Card"
+        currencyCode:
+          type: string
+          example: "INR"
+        denomination:
+          type: number
+          example: 500
+        deliveryType:
+          type: string
+          enum: [realtime, delayed]
+        fee:
+          type: number
+          description: Fee in percentage
+        discount:
+          type: number
+          description: Discount in percentage
+        isPhoneNumberMandatory:
+          type: boolean
+        orderQuantityLimit:
+          type: integer
+        valueType:
+          type: string
+          enum: [fixed, open_value]
+        minValue:
+          type: number
+          description: Applicable when valueType is open_value
+        maxValue:
+          type: number
+          description: Applicable when valueType is open_value
+        exchangeRate:
+          type: number
+
+    PlaceOrderRequest:
+      type: object
+      required: [poNumber, productId, denomination, quantity]
+      properties:
+        poNumber:
+          type: string
+          description: Unique reference ID for the order — must be unique per order
+          example: "PO-2024-00123"
+        productId:
+          type: integer
+          example: 12345
+        denomination:
+          type: number
+          example: 500
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 10
+          example: 2
+        notifyReceiverEmail:
+          type: integer
+          enum: [0, 1]
+          description: Pass 1 to notify recipient via email
+        receiver:
+          $ref: '#/components/schemas/Receiver'
+
+    Receiver:
+      type: object
+      properties:
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+
+    PlaceOrderResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            placeOrder:
+              type: object
+              properties:
+                orderId:
+                  type: integer
+                  example: 26663453
+                poNumber:
+                  type: string
+                  example: "PO-2024-00123"
+                status:
+                  type: string
+                  enum: [success, pending, failed]
+                vouchers:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/VoucherResult'
+
+    VoucherResult:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [code, codePin, url, urlPin]
+        code:
+          type: string
+        pin:
+          type: string
+        url:
+          type: string
+
+    GetOrderDetailsRequest:
+      type: object
+      properties:
+        poNumber:
+          type: string
+          nullable: true
+          example: "PO-2024-00123"
+        orderId:
+          oneOf:
+            - type: string
+            - type: integer
+          nullable: true
+          example: "26663453"
+
+    GetOrderDetailsResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            getOrderDetails:
+              $ref: '#/components/schemas/OrderDetails'
+
+    OrderDetails:
+      type: object
+      properties:
+        orderId:
+          type: integer
+        poNumber:
+          type: string
+        status:
+          type: string
+        productName:
+          type: string
+        denomination:
+          type: number
+        quantity:
+          type: integer
+        vouchers:
+          type: array
+          items:
+            $ref: '#/components/schemas/VoucherResult'
+
+    GetBalanceResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            getBalance:
+              type: object
+              properties:
+                balance:
+                  type: number
+                  example: 25000.00
+                currencyCode:
+                  type: string
+                  example: "INR"
+
+    # Reward Points (GraphQL envelope)
+    RewardPointsRequest:
+      type: object
+      required: [query, tag, variables]
+      properties:
+        query:
+          type: string
+          enum:
+            - storesAdmin.query.user_balance
+            - storesAdmin.mutation.sendBalance
+          example: "storesAdmin.query.user_balance"
+        tag:
+          type: string
+          example: "storeAdmin"
+        variables:
+          type: object
+          description: Payload varies by query — see examples above
+
+    RewardPointsResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          description: |
+            Shape depends on the query:
+            - `user_balance` → `data.user_balance`
+            - `sendBalance`  → `data.sendBalance`
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "An error occurred"
+
+    # ── Marketplace / Storefront Integration ──
+    FetchPointsResponse:
+      type: object
+      required: [userId, availableAmount, currency]
+      properties:
+        userId:
+          type: string
+          example: "jsmth23"
+        walletId:
+          type: string
+          description: Optional — include if the user has multiple wallets
+          example: "Wellness Wallet"
+        availableAmount:
+          type: string
+          example: "8925.15"
+        currency:
+          type: string
+          example: "USD"
+
+    UserProfileResponse:
+      type: object
+      required: [userId, firstName, lastName, email]
+      properties:
+        userId:
+          type: string
+          example: "cgrant1"
+        firstName:
+          type: string
+          example: "Carla"
+        lastName:
+          type: string
+          example: "Grant"
+        email:
+          type: string
+          format: email
+          example: "carla@company.com"
+        country:
+          type: string
+          example: "United States"
+        phone:
+          type: string
+          example: "+1 415342234"
+
+    UpdatePointsRequest:
+      type: object
+      required: [XoxodayTransactionId, totalOrderAmount, currency]
+      properties:
+        XoxodayTransactionId:
+          type: string
+          description: Xoxoday's internal order ID
+          example: "1703475"
+        totalOrderAmount:
+          type: string
+          example: "500"
+        currency:
+          type: string
+          example: "USD"
+        comments:
+          type: string
+          example: ""
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderedProduct'
+
+    OrderedProduct:
+      type: object
+      properties:
+        productId:
+          type: string
+          example: "28618"
+        name:
+          type: string
+          example: "Amazon Gift Card"
+        quantity:
+          type: string
+          example: "1"
+        price:
+          type: string
+          example: "500"
+        orderAmount:
+          type: string
+          example: "500"
+        category:
+          type: string
+          nullable: true
+        description:
+          type: string
+
+    UpdatePointsResponse:
+      type: object
+      required: [TxnID]
+      properties:
+        TxnID:
+          type: string
+          description: Your system's transaction ID — Xoxoday stores this for future refunds
+          example: "531661"
+
+    RefundRequest:
+      type: object
+      required: [TxnID, currency, userId, refundAmount, vendor]
+      properties:
+        TxnID:
+          type: string
+          description: Transaction ID returned by your system in UpdatePoints
+          example: "531661"
+        currency:
+          type: string
+          example: "USD"
+        userId:
+          type: string
+          example: "jsmth23"
+        refundAmount:
+          type: string
+          example: "500"
+        vendor:
+          type: string
+          example: "XOXODAY"

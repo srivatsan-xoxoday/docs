@@ -1,0 +1,93 @@
+---
+title: "Email Whitelisting"
+---
+
+<Info>
+  For emails to not land in spam and properly open images in email services like Microsoft Outlook and Gmail, follow the steps below.
+</Info>
+
+## Microsoft Outlook Email Whitelisting Process
+
+<Tabs>
+  <Tab title="Option 1: From Email Message">
+    In an open message sent from a particular email address or domain, right-click on a blocked item and do one of the following:
+
+    - Click **Add Sender to Safe Senders List**.
+    - Click **Add the Domain \[@domain\] to Safe Senders List**.
+  </Tab>
+  <Tab title="Option 2: From Settings">
+    <Steps>
+      <Step title="Click File in the header">
+      </Step>
+      <Step title="Select Options from the left side menu">
+      </Step>
+      <Step title="Select Trust Centre from the left panel">
+      </Step>
+      <Step title="Click Trust Center Setting">
+      </Step>
+      <Step title="Uncheck 'Don't download pictures automatically in HTML email messages or RSS items.'">
+      </Step>
+      <Step title="Refresh and restart Outlook">
+      </Step>
+    </Steps>
+  </Tab>
+  <Tab title="Option 3: From Microsoft Admin">
+    <Steps>
+      <Step title="Login to https://portal.microsoft.com">
+      </Step>
+      <Step title="Go to Admin > Exchange > Mail Flow">
+      </Step>
+      <Step title="Click + and select Bypass Spam Filtering">
+      </Step>
+      <Step title="Set Apply this rule if… > The sender… > domain is">
+      </Step>
+      <Step title="Enter the domain name (example: rolet.com)">
+      </Step>
+      <Step title="Click + under specify domain to add the domain to the list">
+      </Step>
+      <Step title="Check Stop processing more rules">
+      </Step>
+      <Step title="Click Save">
+      </Step>
+    </Steps>
+
+    <Note>
+      You can add multiple domain names to the same rule without creating additional global rules in Mail Flow.
+    </Note>
+  </Tab>
+</Tabs>
+
+## Google Email Whitelisting Process
+
+<Steps>
+  <Step title="Go to Admin console > Apps > G Suite Gmail > Advanced settings">
+  </Step>
+  <Step title="Scroll to Spam section, hover over the setting, and click Configure">
+  </Step>
+  <Step title="Enter a unique name for the setting">
+  </Step>
+  <Step title="Check 'Bypass spam filters for messages received from addresses or domains within this approved senders lists'">
+  </Step>
+  <Step title="Click 'Use existing or Create a new one', enter a list name, and click Create">
+  </Step>
+  <Step title="Hover over the list name, click Edit, then click Add">
+  </Step>
+  <Step title="Enter the domain name (example: abc.com)">
+  </Step>
+  <Step title="Save">
+  </Step>
+</Steps>
+
+## DMARC Quarantine Issue
+
+<Warning>
+  **Error Message:**
+
+  DMARC Message from domain xoxoday.com, DMARC fail, (SPF aligned False, DKIM aligned False) DMARC policy is quarantine, applied policy is quarantine.
+
+  If you encounter this error, follow the whitelisting process for your respective email service above.
+</Warning>
+
+<Callout icon="envelope" color="#3B82F6">
+  **Questions?** Reach out to us at [cs@xoxoday.com](mailto:cs@xoxoday.com).
+</Callout>

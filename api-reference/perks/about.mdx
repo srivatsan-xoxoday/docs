@@ -1,0 +1,46 @@
+---
+title: "Perks API: Surface Exclusive Offers in Your App"
+description: "The Plum Perks API lets you fetch and display curated employee perks and exclusive brand offers directly in your application."
+sidebarTitle: "About"
+---
+
+The Plum Perks API lets you embed curated employee perks and exclusive brand offers directly into your application. Rather than directing your users to a separate rewards portal, you can fetch available offers and surface them natively inside your HR platform, employee app, or engagement tool. This creates a seamless experience where employees discover and access perks without leaving the tools they already use.
+
+## What you can do with the Perks API
+
+- **Authenticate**: Use `GET /access-token` to generate a Perks-specific access token scoped to the offers catalog.
+- **Fetch offers**: Call `GET /fetch-offers` to retrieve the current list of available perks, deals, and exclusive brand offers available to your users.
+
+## What Plum Perks includes
+
+The Perks catalog includes curated, exclusive offers from brands across categories such as:
+
+- Dining and restaurants
+- Travel and accommodation
+- Entertainment and streaming
+- Health and wellness
+- Shopping and e-commerce
+- Financial services and insurance
+
+Plum curates and updates these offers regularly, so your users always see current, relevant deals.
+
+## Supported use cases
+
+- **Employee benefits portals**: Embed a perks section inside your company intranet or HR platform so employees can browse offers without switching tools.
+- **Engagement platforms**: Supplement your rewards program with lifestyle perks to increase platform engagement and daily active use.
+- **Onboarding experiences**: Surface exclusive welcome offers to new employees as part of their onboarding flow.
+
+## Available endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/access-token` | Generate a Perks API access token |
+| GET | `/fetch-offers` | Retrieve available perks and brand offers |
+
+## Get started
+
+See the [Authentication guide](/api-reference/perks/authentication) to generate your Perks API access token and make your first offers request.
+
+<Note>
+  The full Plum Perks API reference is available at [developers.xoxoday.com/reference/about-perks-api](https://developers.xoxoday.com/reference/about-perks-api).
+</Note>

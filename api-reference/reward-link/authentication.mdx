@@ -1,0 +1,141 @@
+---
+title: "Authenticate with the Reward Link API"
+description: "Validate your access token and authenticate with the Plum Reward Link API to start sending reward links programmatically."
+sidebarTitle: "Authentication"
+---
+
+The Reward Link API uses the same OAuth 2.0 Bearer token authentication flow as all other Plum APIs. You generate an access token using your Client ID and Secret, then validate and include it in every API request. This page covers the authentication setup and the `validate-token` endpoint that confirms your token is active before you begin sending reward links.
+
+## Environment URLs
+
+| Environment | Base URL |
+|-------------|----------|
+| Production  | `https://accounts.xoxoday.com/chef` |
+| Sandbox     | `https://canvas.xoxoday.com/chef` |
+
+## Generate your credentials
+
+<Steps>
+  <Step title="Sign in to the Plum admin portal">
+    Log in with Super Admin credentials. API credential management requires Super Admin access.
+  </Step>
+  <Step title="Navigate to API settings">
+    Click **Settings** in the top navigation bar, select **API** from the left panel, and open the **Storefront Integration** tab.
+  </Step>
+  <Step title="Generate your Client ID and Secret">
+    Click **Generate ID** and confirm. Copy your Client ID and Secret ID and store them securely.
+  </Step>
+</Steps>
+
+## Obtain an access token
+
+Use the OAuth 2.0 authorization code flow. First, redirect to the authorization endpoint to obtain a code, then exchange the code for an access token:
+
+<CodeGroup>
+```bash curl
+curl -X POST https://accounts.xoxoday.com/chef/v1/oauth/token/company \
+  -H "Content-Type: application/json" \
+  -d '{
+    "grant_type": "authorization_code",
+    "code": "YOUR_AUTHORIZATION_CODE",
+    "redirect_uri": "YOUR_REDIRECT_URI",
+    "client_id": "YOUR_CLIENT_ID",
+    "client_secret": "YOUR_CLIENT_SECRET"
+  }'
+```
+
+```javascript Node.js
+const response = await fetch(
+  'https://accounts.xoxoday.com/chef/v1/oauth/token/company',
+  {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      grant_type: 'authorization_code',
+      code: 'YOUR_AUTHORIZATION_CODE',
+      redirect_uri: 'YOUR_REDIRECT_URI',
+      client_id: 'YOUR_CLIENT_ID',
+      client_secret: 'YOUR_CLIENT_SECRET',
+    }),
+  }
+);
+const { access_token, refresh_token } = await response.json();
+```
+</CodeGroup>
+
+```json
+{
+  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGci...",
+  "token_type": "bearer",
+  "expires_in": 2592000,
+  "refresh_token": "3ecc3cfc35c624978b87dd6735bd1dab...",
+  "access_token_expiry": 1692265307092,
+  "refresh_token_expiry": 1694857307092
+}
+```
+
+## Validate your token
+
+Before sending reward links, use the `validate-token` endpoint to confirm your access token is still active.
+
+**Endpoint:** `POST /v1/oauth/api/validate-token`
+
+```bash
+curl -X POST https://accounts.xoxoday.com/chef/v1/oauth/api/validate-token \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "X-Api-Key: YOUR_CLIENT_ID" \
+  -H "X-Secret-Key: YOUR_CLIENT_SECRET" \
+  -H "Content-Type: application/json"
+```
+
+A successful validation response:
+
+```json
+{
+  "status": 1,
+  "message": "Token is valid",
+  "data": {
+    "isValid": true,
+    "expiresAt": 1692265307092
+  }
+}
+```
+
+If `isValid` is `false` or you receive a `401` response, refresh your token before proceeding.
+
+## Include the token in requests
+
+Pass the access token as a Bearer token in the `Authorization` header of every Reward Link API call:
+
+```bash
+curl -X POST https://accounts.xoxoday.com/chef/v1/oauth/api/send-link \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "X-Api-Key: YOUR_CLIENT_ID" \
+  -H "X-Secret-Key: YOUR_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{ ... }'
+```
+
+## Token lifecycle
+
+| Token | Validity |
+|-------|----------|
+| Access token | 15 days |
+| Refresh token | 30 days |
+
+Refresh your access token using the refresh token before it expires:
+
+```bash
+curl -X POST https://accounts.xoxoday.com/chef/v1/oauth/token/refresh \
+  -H "Content-Type: application/json" \
+  -d '{
+    "grant_type": "refresh_token",
+    "refresh_token": "YOUR_REFRESH_TOKEN",
+    "client_id": "YOUR_CLIENT_ID",
+    "client_secret": "YOUR_CLIENT_SECRET"
+  }'
+```
+
+<Tip>
+  Build automated token refresh into your integration to ensure uninterrupted reward link delivery. Track the `access_token_expiry` value and refresh proactively rather than waiting for a `401` error.
+</Tip>

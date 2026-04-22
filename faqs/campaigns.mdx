@@ -1,0 +1,96 @@
+---
+title: "Campaigns FAQ: Common Questions Answered"
+description: "Answers to common questions about Plum campaigns—reward link vs. reward code, expiry settings, customization options, and tracking redemptions."
+---
+
+Plum's campaign tools let you design, distribute, and track reward programs at scale—from one-off gifting moments to automated, bulk campaigns. The questions below cover the most common things admins and program managers want to know when running campaigns on Plum.
+
+<AccordionGroup>
+  <Accordion title="What is the difference between Reward Links and Reward Codes?">
+    A **Reward Link** is a URL sent to the recipient that leads them to a redemption page where they can choose from available reward options in your catalog. The recipient clicks the link and selects their preferred reward.
+
+    A **Reward Code** is a specific alphanumeric code tied to a particular gift card or voucher. The recipient uses that code directly on the merchant's website or app to redeem the value.
+
+    Some gift card products use a URL and a PIN together, while others use only a code or only a URL. The specific format depends on the product and the fulfillment method used by the merchant. When integrating via API, the response type (code, code + PIN, URL, or URL + PIN) is indicated in the product listing.
+  </Accordion>
+
+  <Accordion title="Can I set an expiry date on a campaign?">
+    Yes. When creating a campaign, you can configure an expiry or validity window for the rewards being distributed. Recipients who do not redeem within the specified period will lose access to unclaimed rewards.
+
+    If you want to check whether a specific gift card or voucher is still valid before it is redeemed, you can use the GetVouchers API to retrieve the latest status of a voucher. Plum does not send automatic notifications for expired unclaimed vouchers by default.
+  </Accordion>
+
+  <Accordion title="Can I customize the email sent to recipients?">
+    Yes. Plum allows you to customize reward communication emails sent to recipients. You can adjust the sender name, subject line, message body, and branding to match your organization's look and feel. The platform can also be white-labeled to reflect your company's visual identity.
+
+    For detailed guidance on editing email templates, refer to the Customize Reward Communication article in the help center.
+  </Accordion>
+
+  <Accordion title="How do I know if a recipient has redeemed their reward?">
+    The centralized campaign dashboard provides real-time status updates on every reward issued through Plum. For each campaign, you can view:
+
+    - **Issued:** The reward has been sent to the recipient.
+    - **Redeemed:** The recipient has successfully used the reward.
+    - **Pending:** The reward is queued but not yet fulfilled (for example, if a non-API product is temporarily out of stock).
+    - **Failed:** The reward could not be delivered.
+
+    You can drill down to recipient-level detail within the dashboard to check the status for individual users. Reports can also be exported in CSV or XLSX format for offline tracking.
+  </Accordion>
+
+  <Accordion title="Can I pause a campaign?">
+    Yes. Active campaigns can be paused from the admin dashboard. When a campaign is paused, no new rewards are distributed until you resume it. Rewards that have already been issued remain valid and accessible to recipients unless you explicitly disable them.
+
+    If you need to make changes to campaign settings—such as the reward catalog, budget, or eligible recipients—pausing the campaign first is recommended to avoid unintended distributions during the update.
+  </Accordion>
+
+  <Accordion title="What happens to unused rewards when I disable a campaign?">
+    When you disable a campaign, any rewards that have already been issued to recipients remain accessible to those recipients until the reward's own expiry date. Disabling a campaign stops new rewards from being sent, but it does not revoke rewards that have already been distributed.
+
+    If you want to revoke access to unclaimed rewards, contact the Plum support team at [cs@xoxoday.com](mailto:cs@xoxoday.com) to discuss options for your specific program configuration.
+
+    Budget that has been allocated but not yet issued as rewards is not automatically returned when a campaign is disabled. Check with your account representative for how unused campaign budget is handled in your contract.
+  </Accordion>
+
+  <Accordion title="Is there a centralized dashboard to monitor all campaigns?">
+    Yes. Plum includes a centralized dashboard where administrators can oversee all active and past campaigns from a single view. The dashboard shows:
+
+    - Real-time status across all campaigns (active, paused, completed)
+    - Reward issuance and redemption rates
+    - Budget utilization per campaign
+    - Recipient-level activity and program-wide analytics
+
+    The dashboard is accessible to all users with Admin or Super Admin roles.
+  </Accordion>
+
+  <Accordion title="Can I run bulk campaigns with large recipient lists?">
+    Yes. Plum's admin portal supports bulk reward distribution. You can upload a recipient list of up to **10,000 users in a single file** and send rewards to all of them in one action. Rewards can also be sent programmatically via the Plum API, which is useful for automated workflows triggered by external systems such as CRM or HRMS platforms.
+
+    For very high-volume campaigns or use cases exceeding standard API rate limits (5,000 requests per second), contact your implementation manager to discuss appropriate configurations.
+  </Accordion>
+
+  <Accordion title="Can I run referral or marketing campaigns through Plum?">
+    Yes. Plum supports end-to-end execution of referral programs and marketing promotions tied to gift cards. You can:
+
+    - Distribute digital and physical gift cards via the reward marketplace.
+    - Personalize campaign messaging and automate reward delivery upon trigger events.
+    - Track redemptions in real time through the analytics dashboard.
+    - Send reminders or nudges to recipients who have not yet redeemed their reward.
+
+    Built-in referral tracking lets you automatically reward users for successful referrals, supporting both B2B and B2C audiences.
+  </Accordion>
+
+  <Accordion title="Does Plum support gamification features within campaigns?">
+    Yes. Plum includes gamification tools that can be incorporated into campaigns to increase engagement:
+
+    - **Leaderboards** that rank participants by performance, points earned, or other KPIs. Leaderboards can be segmented by region, team, or cohort.
+    - **Digital badges** and milestone-based unlocks tied to campaign activity.
+    - **Points-based rewards** and seasonal quests to maintain ongoing participation.
+    - **Gamification analytics** to track badge completion, participation rates, and engagement over time.
+
+    These features are particularly effective in sales incentive, channel partner, and customer loyalty programs.
+  </Accordion>
+</AccordionGroup>
+
+<Tip>
+  Need help setting up a campaign? Reach out to the Plum support team at [cs@xoxoday.com](mailto:cs@xoxoday.com).
+</Tip>

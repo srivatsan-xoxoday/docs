@@ -1,0 +1,136 @@
+---
+title: "Salesforce Integration"
+description: "Integrate Plum with Salesforce to send 1:1 rewards from contact records and create trigger-based reward flows for customers and prospects."
+---
+
+Plum's Salesforce integration lets your sales and marketing teams send rewards, incentives, and gift cards directly from Salesforce—without switching between platforms. You can reward a single Lead or Contact with one click from their record, or build Salesforce Flows that fire rewards automatically when specific events occur.
+
+## What you can do with the integration
+
+- Install the Plum package from Salesforce AppExchange.
+- Send 1:1 rewards to Leads and Contacts from the Xoxoday widget on any record page.
+- Create Salesforce Flows that trigger Plum rewards when a lead is added, a deal reaches a stage, or any record change occurs.
+- Track reward campaigns alongside CRM data without leaving Salesforce.
+- Use the Salesforce Loyalty Cloud integration to let loyalty members redeem points from Plum's catalog via SSO.
+
+## Getting started: installing the package
+
+<Steps>
+  <Step title="Sign in to Salesforce">
+    Log in to Salesforce with your credentials.
+  </Step>
+  <Step title="Search for Xoxoday Plum on AppExchange">
+    Go to **Apps \> AppExchange marketplace**, search for **Xoxoday Plum**, and click **Get it now**.
+  </Step>
+  <Step title="Choose the installation scope">
+    Select one of the three installation options—**Install for Admins only**, **Install for all users**, or **Install for Specific Users**—based on which team members need access to the reward widget.
+  </Step>
+  <Step title="Create a Reward Link campaign in Plum">
+    Log in to your Plum admin dashboard. Go to **Settings \> Campaigns**, select **Reward Link Campaign**, and click **Create New**. Give the campaign a name, select the country and denomination, choose your vouchers, and save. This campaign will be used when sending rewards from Salesforce.
+  </Step>
+  <Step title="Connect Salesforce to Plum">
+    In Plum, go to **Manage Integrations**, select the Salesforce integration, and click **Connect**. You will be redirected to Salesforce to complete the connection.
+  </Step>
+</Steps>
+
+## Authenticating and connecting
+
+Before you can send rewards, you need to authenticate Salesforce so it can make API calls to Plum.
+
+<Steps>
+  <Step title="Navigate to Named Credentials">
+    In Salesforce, go to **Setup \> Users**, select the relevant user, then go to **Auth Settings for External \> Named Credential**.
+  </Step>
+  <Step title="Set the authentication protocol">
+    Under **Authentication**, select **Authenticator Provider**, click **Edit**, and set the **Authentication Protocol** to **OAuth 2.0**.
+  </Step>
+  <Step title="Select the Xoxoday Auth Provider">
+    Under **Authentication Provider**, search for and select **XOXODay\_AuthProvider**, then click **Save**.
+  </Step>
+  <Step title="Authorise the connection">
+    You will be taken to a Plum authorisation screen. Click **Allow**. Once authorised, you are returned to Salesforce with the connection active.
+  </Step>
+</Steps>
+
+## Adding the Plum widgets to record pages
+
+Plum provides two widgets to add to your Lead or Contact page layouts: the reward widget for sending 1:1 rewards, and the refresh widget for keeping your reward automations in sync.
+
+<Steps>
+  <Step title="Open the page editor">
+    From a Lead or Contact record, click the **Setup icon** in the navbar and select **Edit Page**.
+  </Step>
+  <Step title="Add the reward widget">
+    In the Components panel, search for **Xoxoday**. Drag and drop **Xoxodayreward** onto the page layout, then click **Save**.
+  </Step>
+  <Step title="Add the refresh widget">
+    Search again for **Xoxoday** and drag **XoxodayRefreshAutomations** onto the page layout. Click **Save**. This widget syncs your Plum automations into Salesforce so they are available to select in Flows.
+  </Step>
+</Steps>
+
+## Sending 1:1 rewards from a record
+
+<Info>
+  Salesforce users who need to send 1:1 rewards must be added as a user in Plum with Admin or Super Admin access.
+</Info>
+
+<Steps>
+  <Step title="Refresh automations">
+    On the Lead or Contact page, click **Refresh** in the XoxodayRefreshAutomations widget to pull the latest automations from your Plum account.
+  </Step>
+  <Step title="Open the reward widget">
+    In the Xoxodayreward widget, enter the recipient's **Name**, **Email**, select a **Campaign**, and set the **Reward Amount**, then click **Next**.
+  </Step>
+  <Step title="Customise the email">
+    Select an email banner relevant to your campaign type—celebrations, appreciation, thank you—and then click **Send Reward**. The contact receives a reward email with a unique claim link.
+  </Step>
+</Steps>
+
+## Creating a Flow with trigger rewards
+
+Salesforce Flows let you automate reward delivery based on any record event—a new lead added, a deal closed, a field updated.
+
+<Steps>
+  <Step title="Create a campaign and automation in Plum">
+    Before building the Flow, ensure you have created a Reward Link campaign and at least one automation in Plum. Click **Refresh** in the XoxodayRefreshAutomations widget on a record page to sync them into Salesforce.
+  </Step>
+  <Step title="Open Salesforce Flow Builder">
+    Go to **Setup**, search for **Flows** under Process Automation, and click **New Flow**.
+  </Step>
+  <Step title="Configure the start trigger">
+    Select a template type and configure the start trigger settings. Under **Object**, select **Lead** or **Contact** (or another object based on your use case), and click **Done**.
+  </Step>
+  <Step title="Add a Create Records element">
+    Click **\+** to add a new element and select **Create Records**. Edit the settings and under **Object**, search for and select **XoxodayRewardFlowAutomations**.
+  </Step>
+  <Step title="Add a Get Records element">
+    Add another element and select **Get Records**. Set the object to **XoxodayRewardFlowAutomations** and filter records by **ID** using the record variable from the previous step.
+  </Step>
+  <Step title="Add the Plum Reward API action">
+    Add an **Action** element. Under **Uncategorised**, select the action **Xoxoday Plum Reward API**. Map the input fields—recipient email, campaign ID, and other required parameters—to the relevant Flow variables.
+  </Step>
+  <Step title="Save and activate the Flow">
+    Click **Save**, review the Flow, and then **Activate** it. From this point, the Flow will automatically trigger a Plum reward whenever the configured event occurs.
+  </Step>
+</Steps>
+
+## Salesforce Loyalty Cloud
+
+<Note>
+  Salesforce Loyalty Cloud is a separate integration designed for loyalty program operators, distinct from the standard Salesforce CRM integration described above.
+</Note>
+
+Plum's Salesforce Loyalty Cloud integration lets you redirect loyalty members from a member portal—built on Salesforce Experience Cloud or your own mobile app—to Plum's global marketplace for reward redemption. Members authenticate via SSO or SAML, so they reach the Plum storefront without an extra login.
+
+Once members enter the storefront, Plum calls Salesforce endpoints to fetch accrued loyalty points and post back the spent amount after redemption. This gives loyalty members a seamless end-to-end experience: earn points in Salesforce, spend them on Plum.
+
+To set up the Salesforce Loyalty Cloud integration, contact the Plum team at [cs@xoxoday.com](mailto:cs@xoxoday.com) to receive the onboarding guide and API configuration details.
+
+## Security and compliance
+
+Plum meets the following security standards for the Salesforce integration:
+
+- Encryption of all sensitive data in transit and at rest.
+- HTTPS and HSTS for all connections.
+- OAuth 2.0 authentication for the Salesforce API connection.
+- ISO, GDPR, and SOC compliance across the Plum platform.

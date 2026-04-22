@@ -1,0 +1,465 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "name": "Plum by Xoxoday",
+  "theme": "almond",
+  "logo": {
+    "light": "https://media.brand.dev/7f11dabc-b579-4dcc-ae3d-f416e076e2eb.png",
+    "dark": "https://media.brand.dev/1df4e297-de65-404e-b29d-b71274e8b523.png"
+  },
+  "favicon": "https://icons.duckduckgo.com/ip3/help.plum.xoxoday.com.ico",
+  "colors": {
+    "primary": "#0c0c14",
+    "light": "#ffffff",
+    "dark": "#1D4ED8"
+  },
+  "navbar": {
+    "primary": {
+      "type": "button",
+      "label":"Book A Demo",
+      "href": "https://www.xoxoday.com/plum/demo"
+    }
+  },
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Help Center",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "getting-started/overview",
+              "getting-started/signing-up",
+              "getting-started/for-end-users"
+            ]
+          },
+          {
+            "group": "Campaigns",
+            "pages": [
+              "campaigns/overview",
+              "campaigns/reward-link-campaign",
+              "campaigns/reward-code-campaign",
+              "campaigns/manage-campaigns"
+            ]
+          },
+          {
+            "group": "Send Awards",
+            "pages": [
+              {
+                "group": "Overview",
+                "expanded": true,
+                "pages": [
+                  "reward-modes-and-types-overview",
+                  "comparison-guide"
+                ]
+              },
+              {
+                "group": "Reward Code",
+                "pages": [
+                  "reward-code-overview",
+                  "reward-code-customize-reward-communication",
+                  "send-reward-code-individually",
+                  "send-reward-code-bulk-upload"
+                ]
+              },
+              {
+                "group": "Reward Links",
+                "pages": [
+                  "reward-link-overview",
+                  "reward-link-customize-reward-communication",
+                  "send-reward-links-to-self",
+                  "send-reward-links-bulk-upload",
+                  "send-reward-links-send-individually"
+                ]
+              },
+              {
+                "group": "Reward Points",
+                "pages": [
+                  "reward-points-overview",
+                  "send-reward-points-send-individually",
+                  "send-reward-points-bulk-upload",
+                  "xoxo-reward-points"
+                ]
+              },
+              {
+                "group": "Gift Cards",
+                "pages": [
+                  "sending-gift-cards",
+                  "gift-cards-customize-reward-communication"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Account Settings",
+            "pages": [
+              {
+                "group": "Storefront: A Global Reward Marketplace",
+                "pages": [
+                  "storefront-a-global-reward-marketplace-overview",
+                  "storefront-branding-customization"
+                ]
+              },
+              {
+                "group": "Branding: Email Domain Authentication",
+                "pages": [
+                  "email-domain-authentication-overview",
+                  "step-by-step-guide-to-authenticate-your-domain",
+                  "email-whitelisting",
+                  "troubleshoot-domain-authentication"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Account Administration",
+            "pages": [
+              "account/user-management",
+              "account/reporting",
+              "account/payments-wallet"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "integrations/overview",
+              "integrations/hubspot",
+              "integrations/salesforce",
+              "integrations/zoho-crm",
+              "integrations/zapier",
+              "integrations/surveymonkey-qualtrics",
+              "integrations/other-integrations"
+            ]
+          },
+          {
+            "group": "Plum Walkthrough Videos",
+            "pages": [
+              "video-directory"
+            ]
+          },
+          {
+            "group": "Security & Compliance",
+            "pages": [
+              "security/overview",
+              "security/data-privacy",
+              "security/certifications"
+            ]
+          },
+          {
+            "group": "Prepaid Cards",
+            "pages": []
+          },
+          {
+            "group": "Product Updates",
+            "pages": []
+          },
+          {
+            "group": "Resources",
+            "pages": []
+          },
+          {
+            "group": "Product Roadmap - 2026",
+            "pages": []
+          },
+          {
+            "group": "Offers Management",
+            "pages": []
+          },
+          {
+            "group": "FAQs",
+            "pages": [
+              "faqs/campaigns",
+              "faqs/integrations",
+              "faqs/account-management"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Guides",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "API-GUIDE/Getting-Started/overview"
+            ]
+          },
+          {
+            "group": "Quick Start",
+            "pages": [
+              {
+                "group": "Reward API",
+                "pages": [
+                  "API-GUIDE/Quick-Start/reward-api",
+                  "API-GUIDE/Quick-Start/reward-api/create-your-api-key",
+                  "API-GUIDE/Quick-Start/reward-api/create-your-sandbox-account",
+                  "API-GUIDE/Quick-Start/reward-api/send-your-first-reward",
+                  "API-GUIDE/Quick-Start/reward-api/set-up-your-environment"
+                ]
+              },
+              {
+                "group": "Reward Links",
+                "pages": [
+                  "API-GUIDE/Quick-Start/reward-links",
+                  "API-GUIDE/Quick-Start/reward-links/create-your-api-key-copy-1",
+                  "API-GUIDE/Quick-Start/reward-links/create-your-first-campaign",
+                  "API-GUIDE/Quick-Start/reward-links/create-your-sandbox-account-copy-1",
+                  "API-GUIDE/Quick-Start/reward-links/send-your-first-reward-link-campaign",
+                  "API-GUIDE/Quick-Start/reward-links/set-up-your-environment-copy-1"
+                ]
+              },
+              {
+                "group": "Reward Points",
+                "pages": [
+                  "API-GUIDE/Quick-Start/reward-points",
+                  "API-GUIDE/Quick-Start/reward-points/create-your-api-key-copy",
+                  "API-GUIDE/Quick-Start/reward-points/create-your-sandbox-account-copy",
+                  "API-GUIDE/Quick-Start/reward-points/send-your-first-reward-points",
+                  "API-GUIDE/Quick-Start/reward-points/set-up-your-environment-copy"
+                ]
+              },
+              {
+                "group": "Storefront Integrations",
+                "pages": [
+                  "API-GUIDE/Quick-Start/storefront-integrations",
+                  "API-GUIDE/Quick-Start/storefront-integrations/create-your-api-key-copy-2",
+                  "API-GUIDE/Quick-Start/storefront-integrations/create-your-sandbox-account-copy-2",
+                  "API-GUIDE/Quick-Start/storefront-integrations/send-your-first-reward-points-copy",
+                  "API-GUIDE/Quick-Start/storefront-integrations/set-up-your-environment-copy-2"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "API-GUIDE/Guides/concepts-1",
+              "API-GUIDE/Guides/rewards-api-standard-workflow",
+              "API-GUIDE/Guides/funding-your-account",
+              "API-GUIDE/Guides/managing-currencies",
+              {
+                "group": "Authentication - Reward APIs & Reward Links APIs",
+                "pages": [
+                  "API-GUIDE/Guides/authentication-2",
+                  "API-GUIDE/Guides/authentication-2/token-management-2",
+                  "API-GUIDE/Guides/authentication-2/refresh-token-access-token",
+                  "API-GUIDE/Guides/authentication-2/validating-access-token"
+                ]
+              },
+              {
+                "group": "Authentication - Storefront Integration APIs & Reward Points APIs",
+                "pages": [
+                  "API-GUIDE/Guides/authentication-copy",
+                  "API-GUIDE/Guides/authentication-copy/token-management-copy",
+                  "API-GUIDE/Guides/authentication-copy/refresh-token-access-token-copy",
+                  "API-GUIDE/Guides/authentication-copy/validating-access-token-copy"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Concepts",
+            "pages": [
+              "API-GUIDE/Concepts/error-handling-1",
+              "API-GUIDE/Concepts/rate-limiting",
+              {
+                "group": "Webhooks",
+                "pages": [
+                  "API-GUIDE/Concepts/webhooks-1",
+                  "API-GUIDE/Concepts/webhooks-1/implementing-webhooks",
+                  "API-GUIDE/Concepts/webhooks-1/securing-webhooks"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Go Live Checklist",
+            "pages": [
+              "API-GUIDE/Go-Live-Checklist/check-list"
+            ]
+          },
+          {
+            "group": "FAQs",
+            "pages": [
+              "API-GUIDE/FAQ/airmiles-1",
+              "API-GUIDE/FAQ/charity-1",
+              "API-GUIDE/FAQ/mobile-top-up"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Playground",
+        "openapi": [
+          "reward-link-spec.yaml"
+        ],
+        "groups": [
+          {
+            "group": "Reward Link API",
+            "pages": [
+              "API-PLAYGROUND/Reward-Link-API/about-xoxolink-apis",
+              "API-PLAYGROUND/Reward-Link-API/generate-link-api",
+              "API-PLAYGROUND/Reward-Link-API/get-campaign-details-api",
+              "API-PLAYGROUND/Reward-Link-API/get-campaigns-api",
+              "API-PLAYGROUND/Reward-Link-API/send-link-api",
+              {
+                "group": "Authentication",
+                "pages": [
+                  "API-PLAYGROUND/Reward-Link-API/authentication-1",
+                  "API-PLAYGROUND/Reward-Link-API/authentication-1/refresh-token-2",
+                  "API-PLAYGROUND/Reward-Link-API/authentication-1/validate-token-2"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Reward Points API",
+            "pages": [
+              "API-PLAYGROUND/Reward-Points-API/about-reward-points-api",
+              "API-PLAYGROUND/Reward-Points-API/cancel-points-api",
+              "API-PLAYGROUND/Reward-Points-API/creating-user-tokens-using-company-token",
+              "API-PLAYGROUND/Reward-Points-API/fetch-points-api",
+              "API-PLAYGROUND/Reward-Points-API/send-points-api",
+              {
+                "group": "Authentication",
+                "pages": [
+                  "API-PLAYGROUND/Reward-Points-API/authentication-copy-1",
+                  "API-PLAYGROUND/Reward-Points-API/authentication-copy-1/refresh-token-1",
+                  "API-PLAYGROUND/Reward-Points-API/authentication-copy-1/validate-token-1"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Rewards API",
+            "pages": [
+              {
+                "group": "Authentication",
+                "pages": [
+                  "API-PLAYGROUND/Rewards-API/authentication",
+                  "API-PLAYGROUND/Rewards-API/authentication/refresh-token",
+                  "API-PLAYGROUND/Rewards-API/authentication/validate-token"
+                ]
+              },
+              {
+                "group": "Airmiles API",
+                "pages": [
+                  "API-PLAYGROUND/Rewards-API/airmiles-api",
+                  "API-PLAYGROUND/Rewards-API/airmiles-api/get-airmiles",
+                  "API-PLAYGROUND/Rewards-API/airmiles-api/get-filter-api-airmiles",
+                  "API-PLAYGROUND/Rewards-API/airmiles-api/get-order-details-airmiles",
+                  "API-PLAYGROUND/Rewards-API/airmiles-api/get-order-history-airmiles",
+                  "API-PLAYGROUND/Rewards-API/airmiles-api/get-payment-report-airmiles",
+                  "API-PLAYGROUND/Rewards-API/airmiles-api/getbalance",
+                  "API-PLAYGROUND/Rewards-API/airmiles-api/place-airmiles-order"
+                ]
+              },
+              {
+                "group": "Charity",
+                "pages": [
+                  "API-PLAYGROUND/Rewards-API/charity",
+                  "API-PLAYGROUND/Rewards-API/charity/faq",
+                  "API-PLAYGROUND/Rewards-API/charity/get-balance-api-3",
+                  "API-PLAYGROUND/Rewards-API/charity/get-charity",
+                  "API-PLAYGROUND/Rewards-API/charity/get-filters-api-1",
+                  "API-PLAYGROUND/Rewards-API/charity/get-order-details-api-2",
+                  "API-PLAYGROUND/Rewards-API/charity/get-order-history-api-1",
+                  "API-PLAYGROUND/Rewards-API/charity/get-payment-report-api-2",
+                  "API-PLAYGROUND/Rewards-API/charity/place-order-api-1"
+                ]
+              },
+              {
+                "group": "Gift Card API",
+                "pages": [
+                  "API-PLAYGROUND/Rewards-API/giftcard-api",
+                  "API-PLAYGROUND/Rewards-API/giftcard-api/get-balance-api",
+                  "API-PLAYGROUND/Rewards-API/giftcard-api/get-filters-api",
+                  "API-PLAYGROUND/Rewards-API/giftcard-api/get-order-details-api",
+                  "API-PLAYGROUND/Rewards-API/giftcard-api/get-order-history-api",
+                  "API-PLAYGROUND/Rewards-API/giftcard-api/get-payment-report-api",
+                  "API-PLAYGROUND/Rewards-API/giftcard-api/get-vouchers-api",
+                  "API-PLAYGROUND/Rewards-API/giftcard-api/place-order-api"
+                ]
+              },
+              {
+                "group": "Lounge",
+                "pages": [
+                  "API-PLAYGROUND/Rewards-API/lounge",
+                  "API-PLAYGROUND/Rewards-API/lounge/fetch-lounge-catalog",
+                  "API-PLAYGROUND/Rewards-API/lounge/get-balance-api-2",
+                  "API-PLAYGROUND/Rewards-API/lounge/get-filter-api",
+                  "API-PLAYGROUND/Rewards-API/lounge/get-order-details-api-1",
+                  "API-PLAYGROUND/Rewards-API/lounge/get-order-history",
+                  "API-PLAYGROUND/Rewards-API/lounge/get-payment-report-api-1",
+                  "API-PLAYGROUND/Rewards-API/lounge/place-order"
+                ]
+              },
+              {
+                "group": "Merchandise",
+                "pages": [
+                  "API-PLAYGROUND/Rewards-API/merchandise",
+                  "API-PLAYGROUND/Rewards-API/merchandise/get-balance-api-4",
+                  "API-PLAYGROUND/Rewards-API/merchandise/get-filter-api-1",
+                  "API-PLAYGROUND/Rewards-API/merchandise/get-merchandise-api",
+                  "API-PLAYGROUND/Rewards-API/merchandise/get-order-details-api-3",
+                  "API-PLAYGROUND/Rewards-API/merchandise/get-order-history-api-2",
+                  "API-PLAYGROUND/Rewards-API/merchandise/get-payment-reports-api",
+                  "API-PLAYGROUND/Rewards-API/merchandise/place-order-api-2"
+                ]
+              },
+              {
+                "group": "Mobile Top-up API",
+                "pages": [
+                  "API-PLAYGROUND/Rewards-API/mobile-top-up-api",
+                  "API-PLAYGROUND/Rewards-API/mobile-top-up-api/get-balance-api-5",
+                  "API-PLAYGROUND/Rewards-API/mobile-top-up-api/get-filter-api-2",
+                  "API-PLAYGROUND/Rewards-API/mobile-top-up-api/get-mobile-top-up-catalog",
+                  "API-PLAYGROUND/Rewards-API/mobile-top-up-api/get-order-details-api-4",
+                  "API-PLAYGROUND/Rewards-API/mobile-top-up-api/get-order-history-api-3",
+                  "API-PLAYGROUND/Rewards-API/mobile-top-up-api/get-payment-reports-api-1",
+                  "API-PLAYGROUND/Rewards-API/mobile-top-up-api/getmobileoperatorapi",
+                  "API-PLAYGROUND/Rewards-API/mobile-top-up-api/place-order-api-3"
+                ]
+              },
+              {
+                "group": "Perks API",
+                "pages": [
+                  "API-PLAYGROUND/Rewards-API/perks-api",
+                  "API-PLAYGROUND/Rewards-API/perks-api/get-filter-api-3",
+                  "API-PLAYGROUND/Rewards-API/perks-api/get-vouchers-api-copy"
+                ]
+              }
+            ]
+          },
+          {
+            "group": "Storefront Integration API",
+            "pages": [
+              "API-PLAYGROUND/Storefront-Integration-API/about-marketplace-integration",
+              "API-PLAYGROUND/Storefront-Integration-API/about-storefront-integration-copy",
+              {
+                "group": "API Endpoints",
+                "pages": [
+                  "API-PLAYGROUND/Storefront-Integration-API/api-endpoints-1/get-balance-api-1",
+                  "API-PLAYGROUND/Storefront-Integration-API/api-endpoints-1/get-profile-api",
+                  "API-PLAYGROUND/Storefront-Integration-API/api-endpoints-1/refund-api",
+                  "API-PLAYGROUND/Storefront-Integration-API/api-endpoints-1/sso-redirection-api",
+                  "API-PLAYGROUND/Storefront-Integration-API/api-endpoints-1/update-redemption-api"
+                ]
+              },
+              {
+                "group": "Authentication",
+                "pages": [
+                  "API-PLAYGROUND/Storefront-Integration-API/authentication-3",
+                  "API-PLAYGROUND/Storefront-Integration-API/authentication-3/refresh-token-3",
+                  "API-PLAYGROUND/Storefront-Integration-API/authentication-3/validate-token-3"
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "fonts": {
+    "family": "Inter"
+  }
+}

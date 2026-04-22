@@ -1,0 +1,49 @@
+---
+title: "Gift Cards API: Send Digital Gift Cards Programmatically"
+description: "Use Plum's Gift Cards API to browse the catalog, place orders, retrieve vouchers, and receive order status webhooks in your application."
+sidebarTitle: "About"
+---
+
+The Gift Cards API lets you integrate Plum's digital gift card catalog directly into your platform. You can browse thousands of gift card products across brands and regions, place orders programmatically, retrieve voucher codes for fulfillment, and receive real-time order status updates through webhooks. The API is designed for organizations that need to deliver gift cards at scale—whether for employee recognition, customer loyalty, sales incentives, or bulk reward programs.
+
+## What you can do with the Gift Cards API
+
+- **Browse the catalog**: Use `GET /get-filters` to retrieve available product categories, brands, and denominations, and `GET /get-vouchers` to fetch detailed product listings.
+- **Place orders**: Submit gift card orders with `POST /place-order` and receive voucher codes or URLs in the response.
+- **Track orders**: Retrieve order status and voucher details with `GET /get-order-details` and review financial activity with `GET /get-payment-report`.
+- **Receive webhooks**: Subscribe to webhook events to get notified in real time when orders are placed, fulfilled, or fail.
+
+## Supported use cases
+
+- **Employee rewards and recognition**: Automate gift card delivery as part of HR and engagement workflows.
+- **Customer incentives**: Send gift cards as part of referral programs, loyalty schemes, or promotional campaigns.
+- **Bulk order fulfillment**: Place high-volume orders for gift cards and receive voucher codes for distribution.
+- **Sales and channel incentives**: Reward sales teams and partners based on performance milestones.
+
+## Available endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/get-filters` | Retrieve product categories and available filters |
+| GET | `/get-vouchers` | Retrieve product listings and denominations |
+| POST | `/place-order` | Place a gift card order |
+| GET | `/get-order-details` | Retrieve details for a specific order |
+| GET | `/get-payment-report` | Retrieve payment and transaction reports |
+
+## Get started
+
+<CardGroup cols={3}>
+  <Card title="Authentication" icon="key" href="/api-reference/gift-cards/authentication">
+    Generate your Client ID and obtain a Bearer token to authenticate all Gift Cards API requests.
+  </Card>
+  <Card title="Place Order" icon="shopping-cart" href="/api-reference/gift-cards/place-order">
+    Learn how to submit a gift card order and handle the voucher response.
+  </Card>
+  <Card title="Webhooks" icon="bell" href="/api-reference/gift-cards/webhooks">
+    Configure webhook endpoints to receive real-time order status notifications.
+  </Card>
+</CardGroup>
+
+<Note>
+  The full interactive API reference for Gift Cards, including live request builders and detailed schema documentation, is available at [developers.xoxoday.com/reference/giftcard-api](https://developers.xoxoday.com/reference/giftcard-api).
+</Note>

@@ -1,0 +1,204 @@
+---
+title: "Other Integrations"
+description: "Explore Plum's integrations with SAP SuccessFactors, Darwinbox, Typeform, ActiveCampaign, and Zoho People—setup guides and redemption flows."
+---
+
+Beyond the major CRM and survey integrations, Plum connects to a wide range of HR, marketing, and form tools. Each integration allows your teams to deliver rewards within the platforms they already use daily—without manual gift code distribution or separate logins.
+
+<AccordionGroup>
+  <Accordion title="SAP SuccessFactors">
+    Plum's SAP SuccessFactors integration is designed for enterprise HR teams. Employees accumulate recognition points inside SuccessFactors and redeem them on Plum's global rewards catalog via Single Sign-On. Plum's catalog supports redemption in over 70 countries, covering 2,000\+ digital gift cards, 10,000\+ international experiences, and 10,000\+ perks.
+
+    ### Getting started
+
+    **Step 1: Administrator access**
+
+    When you enable the Plum integration, a reset password link is sent to the registered company email. This email address becomes the administrator account for configuration and management.
+
+    **Step 2: Initial setup**
+
+    Log in and configure platform settings, including:
+
+    - Conversion factor (how many points equal how much redemption value)
+    - Time zone
+    - Company logo and themes
+
+    You will also receive the SAP SuccessFactors Client API Configuration from the Plum team, which includes:
+
+    - Company ID
+    - API Key
+    - Private Key
+    - Base API URL
+
+    Upload the IDP Metadata (one-time step) to enable SSO for your employees.
+
+    **Step 3: Configuration verification**
+
+    Review the configuration module's status report to confirm the setup is complete.
+
+    **Step 4: Employee access**
+
+    Once configuration is verified, employees can redeem their SuccessFactors points by navigating to the **Compensation** section on the Home tab in SuccessFactors. They click **Redeem**, are redirected to the Plum storefront via SSO, browse the catalog, and complete their order using accumulated points.
+
+    ### Redemption procedure
+
+    1. Log in to your SAP SuccessFactors account.
+    2. On the Home tab, click **Compensation**.
+    3. View your point balance and click **Redeem**.
+    4. You are redirected to the Plum storefront (stores.xoxoday.com) via SSO with your points synced.
+    5. Select your country, browse Gift Vouchers, Experiences, or another category.
+    6. Choose the denomination and quantity, and add to cart.
+    7. At checkout, click **Use xoxo points** and place the order. You can supplement with a debit or credit card if needed.
+
+    <Note>
+      The Xoxoday Plum rewards app is listed on the SAP App Center. Contact [cs@xoxoday.com](mailto:cs@xoxoday.com) to start the onboarding process.
+    </Note>
+  </Accordion>
+
+  <Accordion title="Darwinbox">
+    Plum integrates with Darwinbox, a widely used HRMS platform for modern enterprises. The integration enables employees who have accumulated recognition points in Darwinbox to redeem them on Plum's global rewards catalog via SSO—no separate Plum account or login required.
+
+    ### Points redemption procedure
+
+    1. Log in to your Darwinbox account.
+    2. Click the **Recognition** tile.
+    3. Click **Redeem**. You are automatically redirected to the Plum storefront (stores.xoxoday.com) and logged in via SSO.
+    4. Select your country and choose from **Gift Vouchers**, **Experiences**, or any other category.
+    5. Select a brand voucher or other reward option.
+    6. Choose the denomination and quantity, and add to cart.
+    7. Under the payment option, click **Use available \[X\] points for this order** and place the order. You may supplement with a debit or credit card if your points are insufficient.
+
+    ### Configuring Darwinbox endpoints
+
+    The Darwinbox integration requires configuring API endpoints between Darwinbox and Plum. This is a technical setup step typically handled during onboarding. Contact the Plum team at [cs@xoxoday.com](mailto:cs@xoxoday.com) for the endpoint configuration guide.
+  </Accordion>
+
+  <Accordion title="Typeform">
+    Plum's Typeform integration lets you automatically send rewards to respondents who complete a Typeform survey or form. The integration is ideal for increasing form submission rates when you want to offer an incentive for participation.
+
+    ### How it works
+
+    When a new response is submitted in Typeform, Plum receives the event and delivers a personalised reward to the respondent's email address. The integration supports:
+
+    - Automated and manual reward approval workflows.
+    - Date range and maximum reward count limits.
+    - Plum's full global catalog of 5,000\+ experiences and 3,000\+ gift vouchers.
+
+    ### Setting up the integration
+
+    <Steps>
+      <Step title="Find Xoxoday Plum in Typeform">
+        In Typeform, go to **Apps and Integrations** and search for **Xoxoday Plum**.
+      </Step>
+      <Step title="Connect your Plum account">
+        Click on the Xoxoday Plum card. You will be redirected to the Plum registration page. Log in with existing credentials or create a new account.
+      </Step>
+      <Step title="Add funds to your wallet">
+        In Plum, click the **Recharge** option in the sidebar to add wallet funds. Complete your KYB verification if required.
+      </Step>
+      <Step title="Create a reward campaign">
+        Go to the **Campaigns** tab in Plum and click **Create Reward Code/Reward Link Campaign**. Configure the reward amount, recurrence, start and end dates, and email template. Click **Create Campaign**.
+      </Step>
+      <Step title="Create a Typeform automation">
+        Go to the Typeform integration in your Plum sidebar and click **Create New Automation**. Select the Typeform survey you want to attach rewards to. Configure the reward trigger settings—automatic or manual approval—and any date range or maximum reward count constraints. Click **Launch**.
+      </Step>
+    </Steps>
+
+    After setup, you can manage all Typeform automations from the Typeform integration page in Plum—changing statuses, tracking reward distribution numbers, and reviewing active campaigns.
+  </Accordion>
+
+  <Accordion title="ActiveCampaign">
+    Plum's ActiveCampaign integration adds reward delivery as an action inside your ActiveCampaign automations. You can trigger a Plum reward whenever a contact enters an automation, completes a form, reaches a tag, or meets any other condition you define in ActiveCampaign.
+
+    ### How it works
+
+    You set up the reward automation in two places: in Plum (where you define the reward campaign, approval type, and settings) and in ActiveCampaign (where you set the trigger and add Plum as the action).
+
+    ### Connecting ActiveCampaign and Plum
+
+    There are two methods to connect:
+
+    **Method 1: From ActiveCampaign's Automations tab**
+
+    1. In ActiveCampaign, go to **Automations** and click **Create an Automation**.
+    2. Under the **Actions** tab, choose **Xoxoday Plum** to set up the workflow.
+    3. Select the account to which you want to attach the automation.
+
+    **Method 2: From within an existing automation**
+
+    1. In an existing automation, click **\+** to add a new action.
+    2. Under CX Apps, select **Xoxoday Plum**.
+    3. Choose your Plum account and connect.
+
+    ### Creating a reward automation in Plum
+
+    Once connected, set up the reward automation inside Plum:
+
+    1. Log in to Plum. Under **Manage Integrations**, select **ActiveCampaign Integration** and click **Connect**.
+    2. Go to **Campaigns** in Plum and create a reward campaign—define the reward amount, select catalog items, and customise the email template.
+    3. Click **Create New Automation**, give it a name, and select the trigger type—**manual** or **automated**.
+    4. Configure reward settings: approval type, expiry, time range, and maximum reward count.
+    5. Click **Save and Launch** to activate the automation.
+
+    ### Back in ActiveCampaign
+
+    With the Plum automation live, return to ActiveCampaign and build or update your automation:
+
+    1. Add a trigger (or use an existing one from a Recipe template).
+    2. Add **Xoxoday Plum** as an action and select the automation you created in Plum.
+    3. Set the automation to **Active**.
+
+    From this point, every contact who meets the trigger conditions will automatically receive a Plum reward delivered to their inbox.
+
+    <Note>
+      Rewards are denominated in the same currency as selected in your Plum Billing Details. You can deactivate a reward automation at any stage from the Plum dashboard.
+    </Note>
+
+    ### Disconnecting ActiveCampaign from Plum
+
+    To disconnect:
+
+    1. In ActiveCampaign, go to **Apps \> Connected Apps**.
+    2. Select **Xoxoday Plum**.
+    3. Select the account you want to disconnect and click **Disconnect**.
+  </Accordion>
+
+  <Accordion title="Zoho People">
+    Plum's Zoho People integration enables HR teams to recognise and reward employees directly from within their HR platform. Admins and reporting managers can award reward points from an employee's profile, and employees redeem those points on Plum's global catalog without a separate login.
+
+    ### Setting up the integration
+
+    <Steps>
+      <Step title="Go to Integrations in Plum">
+        In your Plum admin dashboard, click **Integrations** and find **Zoho People**.
+      </Step>
+      <Step title="Connect and activate">
+        Click **Connect**. You will be redirected to the Zoho People Marketplace. Click **Activate**, then log in with your Zoho People credentials and accept the terms and conditions.
+      </Step>
+      <Step title="Configure applicability">
+        Once activated, choose which **locations** and **employee types** are eligible for the rewards program. Click **Save**.
+      </Step>
+    </Steps>
+
+    ### Awarding points to employees
+
+    1. Navigate to the employee's profile in Zoho People.
+    2. Click **Reward Points**.
+    3. Enter the number of points to award and add a note indicating the reason for recognition.
+    4. Click **Assign Points**. The employee receives the points immediately along with an email notification.
+
+    ### Employee redemption experience
+
+    Employees see their available points in the **Xoxoday widget** on the Zoho People homepage. Clicking **Redeem Points** takes them directly to the Plum storefront via SSO—no additional login required. They browse gift cards, merchandise, experiences, and vouchers, add items to the cart, and check out using their reward points.
+
+    <Tip>
+      Only administrators and reporting managers with the required permissions can award points. Employees do not need a separate Xoxoday account—the SSO flow handles authentication automatically.
+    </Tip>
+  </Accordion>
+</AccordionGroup>
+
+## More integrations
+
+Plum supports many additional integrations for marketers, HR teams, support teams, and more—including webinar platforms, collaboration tools, payment and loyalty platforms, and custom API-based integrations.
+
+For the full list of available integrations, visit the [Plum integrations directory](https://www.xoxoday.com/plum-integrations) or contact the Plum team at [cs@xoxoday.com](mailto:cs@xoxoday.com) to discuss a specific integration not listed here.

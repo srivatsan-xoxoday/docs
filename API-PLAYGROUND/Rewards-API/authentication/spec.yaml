@@ -1,0 +1,150 @@
+openapi: 3.0.3
+
+info:
+  title: Xoxoday Rewards API – Authentication
+  version: "1.2"
+  description: |
+    Token management for the Rewards API.
+    Both paths resolve correctly against the default server — no virtual paths needed.
+
+servers:
+  - url: https://stagingstores.xoxoday.com/chef/v1/oauth
+    description: Sandbox
+  - url: https://accounts.xoxoday.com/chef/v1/oauth
+    description: Production
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Authentication
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: "`Authorization: Bearer <access_token>`"
+
+  schemas:
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: Newly generated access token.
+        token_type:
+          type: string
+          example: bearer
+        expires_in:
+          type: number
+          description: Lifetime of the access token in seconds.
+        refresh_token:
+          type: string
+          description: Newly issued refresh token. Old one is immediately invalidated.
+        access_token_expiry:
+          type: string
+          description: Epoch timestamp (ms) when the access token expires.
+        refresh_token_expiry:
+          type: string
+          description: Epoch timestamp (ms) when the refresh token expires.
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid access token.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string, example: Unauthorized }
+
+paths:
+
+  # Real URL: GET https://stagingstores.xoxoday.com/chef/v1/oauth/token
+
+  /token:
+    get:
+      operationId: validateTokenRewards
+      summary: Validate Token
+      description: >
+        Validate whether the current `access_token` is still active.
+        Pass the Bearer token in the `Authorization` header.
+        Note: `expires_in` is in seconds.
+      tags: [Authentication]
+      responses:
+        "200":
+          description: Token is valid.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    description: The validated access token issued by Xoxoday.
+                  token_type:
+                    type: string
+                    description: "Always `bearer`."
+                  expires_in:
+                    type: number
+                    description: Epoch timestamp representing when the token will expire (seconds).
+              example:
+                access_token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+                token_type: bearer
+                expires_in: 1296000
+        "401": { $ref: '#/components/responses/Unauthorized' }
+
+  # Real URL: POST https://stagingstores.xoxoday.com/chef/v1/oauth/token/user
+
+  /token/user:
+    post:
+      operationId: refreshTokenRewards
+      summary: Refresh Token
+      description: >
+        Get a new access token using your refresh token.
+        Every call issues a brand-new refresh token — the old one is immediately
+        invalidated. Always persist the new refresh token from the response.
+      tags: [Authentication]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [grant_type, refresh_token, client_id, client_secret]
+              properties:
+                grant_type:
+                  type: string
+                  enum: [refresh_token]
+                  description: Must be `"refresh_token"`.
+                refresh_token:
+                  type: string
+                  description: The previously issued refresh token.
+                client_id:
+                  type: string
+                  description: Client identifier provided by Xoxoday.
+                client_secret:
+                  type: string
+                  description: Client secret associated with the client ID.
+            example:
+              grant_type: refresh_token
+              refresh_token: "XXXXXXXXX"
+              client_id: "XXXXXXXXX"
+              client_secret: "XXXXXXXXX"
+      responses:
+        "200":
+          description: New tokens issued successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              example:
+                access_token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+                token_type: bearer
+                expires_in: 1296000
+                refresh_token: "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4..."
+                access_token_expiry: "1718000000000"
+                refresh_token_expiry: "1720000000000"
+        "401": { $ref: '#/components/responses/Unauthorized' }

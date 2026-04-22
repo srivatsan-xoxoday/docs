@@ -1,0 +1,63 @@
+---
+title: "Step by step guide to Authenticate Your Domain"
+---
+
+<Info>
+  **Domain Authentication** is a crucial process aimed at confirming the ownership of a domain. Its primary goal is to ensure that emails sent from that domain are authentic and not manipulated, thus mitigating risks associated with email spoofing, phishing, and other fraudulent activities.
+</Info>
+
+## Benefits of Domain Authentication
+
+Upon successful completion of Domain Authentication:
+
+- Recipients will no longer see "via [notifications@xoxoday.com](mailto:notifications@xoxoday.com)" next to the sender's address in the messages.
+- Enhances the credibility and deliverability of emails by adding a layer of legitimacy to emails originating from your domain.
+
+For the complete list of benefits, see [Email Domain Authentication](https://example.com).
+
+## Prerequisites
+
+Before initiating Domain Authentication, ensure the following prerequisites are met:
+
+- Approval of KYB (Know Your Business) is mandatory.
+- Only users with SuperAdmin privileges can authenticate the domain.
+- Access to DNS or hosting provider is required for making necessary DNS modifications. In the absence of direct access, coordinate with your company's IT Admin responsible for DNS management.
+
+<Tip>
+  Coordinate with your company's IT Admin responsible for DNS management. You can use the inbuilt emailing tool to send the DNS records to your IT Admin colleague.
+</Tip>
+
+## Step-by-Step Guide
+
+<Warning>
+  Ensure you are logged in as SuperAdmin with approved KYB. If not done already, head over to: [Submitting Verification Details](https://example.com)
+</Warning>
+
+<Steps>
+  <Step title="Add Your Domain Name">
+    1. Navigate to **Settings \> Notifications**.
+    2. Click on **Authenticate your Domain**.
+    3. Click on **Save and Proceed**.
+  </Step>
+  <Step title="Add DNS Records to Your DNS Manager">
+    The following DNS records need to be added in your DNS Settings. Access your DNS provider portal and input these records. Note that all records are CNAME.
+
+    **If you lack access to the DNS Manager Portal:** Forward these DNS records to your IT Admin or DNS Manager. The records will be sent via email along with a CSV file.
+
+    <Tip>
+      You can use the inbuilt emailing tool to send the DNS records to your IT Admin colleague. We will send DNS records in email along with CSV to your IT Admin.
+    </Tip>
+  </Step>
+  <Step title="Verify Domain">
+    After the IT Admin has added the records:
+
+    1. Check the box **Please verify that your records have been added**.
+    2. Once selected, the Verify button will activate. Click on **Verify**.
+
+    If your DNS records are added correctly and given sufficient time for DNS changes to take place, your domain is now authenticated.
+  </Step>
+</Steps>
+
+---
+
+**Feedback or Questions:** Reach out to us at [cs@xoxoday.com](mailto:cs@xoxoday.com).

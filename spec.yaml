@@ -1,0 +1,2466 @@
+openapi: 3.0.3
+
+info:
+  title: Xoxoday Rewards Platform API
+  version: "1.2"
+  description: |
+    Xoxoday's developer platform for embedding rich reward experiences.
+    All data operations are dispatched via `POST /v1/oauth/api` — the `query`
+    field in the request body selects which operation runs.
+
+servers:
+  - url: https://stagingstores.xoxoday.com/chef
+    description: Sandbox
+  - url: https://accounts.xoxoday.com/chef
+    description: Production
+  - url: https://canvas.xoxoday.com/chef
+    description: Production – Reward Link (sendLinks only)
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Authentication
+  - name: Giftcard API
+  - name: Lounge API
+  - name: Airmiles API
+  - name: Charity API
+  - name: Merchandise API
+  - name: Mobile Top Up API
+  - name: Perks API
+  - name: Reward Link API
+  - name: Reward Points API
+  - name: Storefront Integration API
+
+# ─── Reusable Components ─────────────────────────────────────────────────────
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: "`Authorization: Bearer <access_token>`"
+
+  schemas:
+
+    # ── Auth ──────────────────────────────────────────────────────────────────
+    TokenResponse:
+      type: object
+      properties:
+        access_token: { type: string }
+        token_type: { type: string, example: bearer }
+        expires_in: { type: integer, description: Token lifetime in seconds }
+        refresh_token: { type: string }
+        access_token_expiry: { type: string, description: Epoch ms }
+        refresh_token_expiry: { type: string, description: Epoch ms }
+
+    # ── Shared request wrapper ─────────────────────────────────────────────────
+    PlumProTag:
+      type: object
+      required: [query, tag, variables]
+      properties:
+        query:
+          type: string
+          description: "Always use the value shown in the default."
+        tag:
+          type: string
+          default: plumProAPI
+          description: "Please use 'plumProAPI' always in tag."
+        variables:
+          type: object
+          required: [data]
+          properties:
+            data:
+              type: object
+
+    # ── Shared variable data schemas ───────────────────────────────────────────
+    FiltersData:
+      type: object
+      properties:
+        filterGroupCode:
+          type: string
+          description: Filter category name representing a specific filter group applied.
+        includeFilters:
+          type: string
+          description: Filters that should be explicitly included.
+        excludeFilters:
+          type: string
+          description: Filters that should be explicitly excluded.
+
+    VouchersData:
+      type: object
+      properties:
+        limit:
+          type: integer
+          description: Number of results to return per page (pagination).
+        page:
+          type: integer
+          description: Page number to fetch.
+        includeProducts:
+          type: string
+          description: Comma-separated product IDs to include.
+        excludeProducts:
+          type: string
+          description: Comma-separated product IDs to exclude.
+        exchangeRate:
+          type: integer
+          description: Pass 1 to include exchange rate in response.
+        sort:
+          type: object
+          properties:
+            field: { type: string, example: name }
+            order: { type: string, enum: [ASC, DESC] }
+        filters:
+          type: array
+          items:
+            type: object
+            properties:
+              key: { type: string, example: country }
+              value: { type: string, example: IN }
+
+    PlaceOrderData:
+      type: object
+      required: [productId, quantity, denomination, email, poNumber]
+      properties:
+        productId: { type: string, description: Unique ID of the product. }
+        quantity: { type: string, description: Number of units. }
+        denomination: { type: string, description: Value of the voucher/reward. }
+        email: { type: string, format: email, description: Recipient email. }
+        contact: { type: string, description: Recipient contact number. }
+        poNumber:
+          type: string
+          description: Unique Purchase Order number. Must be unique per order.
+        tag: { type: string, description: Custom tag to categorise the order. }
+        notifyAdminEmail: { type: integer, enum: [0, 1], description: "1 = notify admin." }
+        notifyReceiverEmail: { type: integer, enum: [0, 1], description: "1 = notify recipient." }
+
+    OrderDetailsData:
+      type: object
+      properties:
+        poNumber: { type: string, description: Purchase Order number. }
+        orderId:
+          description: Unique order ID (integer or string).
+          oneOf: [{ type: integer }, { type: string }]
+        sendMailToReceiver: { type: integer, enum: [0, 1] }
+
+    OrderHistoryData:
+      type: object
+      properties:
+        startDate: { type: string, description: Start date filter (YYYY-MM-DD). }
+        endDate: { type: string, description: End date filter (YYYY-MM-DD). }
+        limit: { type: integer }
+        page: { type: integer }
+        tag: { type: string, description: Custom tag filter. }
+
+    # ── Shared response schemas ────────────────────────────────────────────────
+    FiltersResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            getFilters:
+              type: object
+              properties:
+                status: { type: number, description: "1 = success." }
+                data:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      filterGroupName: { type: string }
+                      filterGroupDescription: { type: string }
+                      filterGroupCode: { type: string }
+                      filters:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            filterValue: { type: string }
+                            isoCode: { type: string }
+                            filterValueCode: { type: string }
+
+    VouchersResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            getVouchers:
+              type: object
+              properties:
+                status: { type: number }
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/VoucherProduct'
+
+    VoucherProduct:
+      type: object
+      properties:
+        productId: { type: integer }
+        name: { type: string }
+        description: { type: string }
+        orderQuantityLimit: { type: integer }
+        termsAndConditionsInstructions: { type: string }
+        categories: { type: string }
+        imageUrl: { type: string }
+        currencyCode: { type: string }
+        currencyName: { type: string }
+        countryName: { type: string }
+        countryCode: { type: string }
+        valueType: { type: string, enum: [fixed_denomination, open_value] }
+        maxValue: { type: number }
+        minValue: { type: number }
+        valueDenominations: { type: string }
+        tatInDays: { type: string }
+        usageType: { type: string, enum: [online, offline, both] }
+        deliveryType: { type: string, enum: [realtime, delayed] }
+        fee: { type: number }
+        discount: { type: number }
+        exchangeRate: { type: number }
+        isPhoneNumberMandatory: { type: boolean }
+        isRecommended: { type: integer }
+
+    BalanceResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            getBalance:
+              type: object
+              properties:
+                status: { type: number }
+                data:
+                  type: object
+                  properties:
+                    value: { type: number, description: Available wallet balance. }
+                    currency: { type: string, example: USD }
+
+    PlaceOrderResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            placeOrder:
+              type: object
+              properties:
+                status: { type: number }
+                data:
+                  type: object
+                  properties:
+                    orderId: { type: integer }
+                    orderTotal: { type: number }
+                    rawOrderTotal: { type: number }
+                    orderDiscount: { type: string }
+                    discountPercent: { type: string }
+                    currencyCode: { type: string }
+                    currencyValue: { type: number }
+                    amountCharged: { type: number }
+                    orderStatus: { type: string, example: complete }
+                    deliveryStatus: { type: string, example: delivered }
+                    tag: { type: string }
+                    quantity: { type: integer }
+                    vouchers:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          productId: { type: integer }
+                          orderId: { type: integer }
+                          voucherCode: { type: string }
+                          pin: { type: string }
+                          validity: { type: string }
+                          amount: { type: number }
+                          currency: { type: string }
+                          country: { type: string }
+                          type: { type: string, enum: [code, codePin, url, urlPin] }
+                          currencyValue: { type: number }
+                    voucherDetails:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          orderId: { type: integer }
+                          productId: { type: integer }
+                          productName: { type: string }
+                          currencyCode: { type: string }
+                          productStatus: { type: string }
+                          denomination: { type: number }
+
+    OrderDetailsResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            getOrderDetails:
+              type: object
+              properties:
+                status: { type: number }
+                data:
+                  type: object
+                  properties:
+                    orderId: { type: integer }
+                    orderTotal: { type: number }
+                    rawOrderTotal: { type: number }
+                    orderDiscount: { type: string }
+                    discountPercent: { type: string }
+                    currencyCode: { type: string }
+                    currencyValue: { type: number }
+                    amountCharged: { type: number }
+                    orderStatus: { type: string }
+                    deliveryStatus: { type: string }
+                    tag: { type: string }
+                    orderDate: { type: string }
+                    deliveryDate: { type: string }
+                    quantity: { type: integer }
+                    vouchers:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          productId: { type: integer }
+                          voucherCode: { type: string }
+                          pin: { type: string }
+                          validity: { type: string }
+                          amount: { type: number }
+                          currency: { type: string }
+                          type: { type: string }
+                    voucherDetails:
+                      type: array
+                      items:
+                        type: object
+                        properties:
+                          orderId: { type: integer }
+                          productId: { type: integer }
+                          productName: { type: string }
+                          currencyCode: { type: string }
+                          productStatus: { type: string }
+                          denomination: { type: number }
+
+    OrderHistoryResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            getOrderHistory:
+              type: object
+              properties:
+                status: { type: number }
+                data:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      orderId: { type: integer }
+                      orderDate: { type: string }
+                      email: { type: string }
+                      deliveryStatus: { type: string }
+                      poNumber: { type: string }
+                      tag: { type: string, nullable: true }
+                      orderTotal: { type: number }
+                      amountCharged: { type: number }
+                      currencyCode: { type: string }
+                      products:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            productId: { type: integer }
+                            productName: { type: string }
+                            receiverEmail: { type: string }
+                            price: { type: number }
+                            quantity: { type: integer }
+                            orderProductStatus: { type: string }
+                            currency: { type: string }
+
+    PaymentReportResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            getPaymentReport:
+              type: object
+              properties:
+                status: { type: number }
+                data:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      invoice_number: { type: string }
+                      reference_id: { type: string }
+                      date: { type: string }
+                      reason: { type: string }
+                      adjusted_amount: { type: number }
+                      transaction_status: { type: string }
+                      closing_balance: { type: number }
+
+    # ── Shared error responses ─────────────────────────────────────────────────
+    Error400:
+      type: object
+      properties:
+        error: { type: string, example: bad_request }
+        message: { type: string }
+
+    Error404:
+      type: object
+      properties:
+        error: { type: string, example: not_found }
+        message: { type: string }
+
+    Error502:
+      type: object
+      properties:
+        error: { type: string, example: bad_gateway }
+        message: { type: string }
+
+  # ── Shared response definitions ──────────────────────────────────────────────
+  responses:
+    Unauthorized:
+      description: Invalid or expired access token.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string, example: invalid_token }
+              error_description: { type: string, example: "invalid/expired token" }
+    BadRequest:
+      description: Bad request — invalid parameters.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error400'
+    NotFound:
+      description: Resource not found.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error404'
+    BadGateway:
+      description: Upstream service error.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error502'
+
+# ═════════════════════════════════════════════════════════════════════════════
+# PATHS
+# ═════════════════════════════════════════════════════════════════════════════
+paths:
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # AUTHENTICATION
+  # Real URL: GET/POST https://stagingstores.xoxoday.com/chef/v1/oauth/token
+  # ───────────────────────────────────────────────────────────────────────────
+
+  /v1/oauth/token:
+    get:
+      operationId: validateToken
+      summary: Validate Token
+      description: >
+        Validate whether the current `access_token` is still active.
+        Pass the Bearer token in the `Authorization` header.
+        The client application will pass the bearer token in the header.
+      tags: [Authentication]
+      responses:
+        "200":
+          description: Token is valid.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    description: The validated access token issued by Xoxoday.
+                  token_type:
+                    type: string
+                    description: "Indicates the type of token. Always returned as `bearer`."
+                  expires_in:
+                    type: number
+                    description: Epoch timestamp representing when the token will expire. Note — `expires_in` is in seconds.
+              example:
+                access_token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+                token_type: bearer
+                expires_in: 1718000000
+        "401": { $ref: '#/components/responses/Unauthorized' }
+
+    post:
+      operationId: refreshToken
+      summary: Refresh Token
+      description: >
+        Get the access token using the refresh token.
+        Every call issues a new refresh token — the old one is immediately
+        invalidated. Always store the new refresh token returned in the response.
+      tags: [Authentication]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [grant_type, refresh_token, client_id, client_secret]
+              properties:
+                grant_type:
+                  type: string
+                  enum: [refresh_token]
+                  description: Must be `"refresh_token"` for this API.
+                refresh_token:
+                  type: string
+                  description: The previously issued refresh token used to obtain a new access token.
+                client_id:
+                  type: string
+                  description: The client identifier provided by Xoxoday.
+                client_secret:
+                  type: string
+                  description: The client secret associated with the client ID. Used to authenticate the refresh request.
+            example:
+              grant_type: refresh_token
+              refresh_token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+              client_id: "your_client_id"
+              client_secret: "your_client_secret"
+      responses:
+        "200":
+          description: New tokens issued successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              example:
+                access_token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+                token_type: bearer
+                expires_in: 1296000
+                refresh_token: "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4..."
+                access_token_expiry: "1718000000000"
+                refresh_token_expiry: "1720000000000"
+        "401": { $ref: '#/components/responses/Unauthorized' }
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # GIFTCARD API  (all POST to https://stagingstores.xoxoday.com/chef/v1/oauth/api)
+  # ───────────────────────────────────────────────────────────────────────────
+
+  /v1/oauth/api/giftcard/getFilters:
+    post:
+      operationId: giftcardGetFilters
+      summary: Get Filters API
+      description: >
+        Filters API allows you to identify filters that are available which
+        can be applied to filter the products in Get Voucher API.
+
+        **Note:**
+        1. `includeFilters` and `excludeFilters` will only work when a value is passed in `filterGroupCode`.
+        2. You can pass empty values for all parameters to get a list of all available filters.
+
+        Real URL: `POST /v1/oauth/api`
+      tags: [Giftcard API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  default: plumProAPI.mutation.getFilters
+                  description: "Please use 'plumProAPI.mutation.getFilters' always in query."
+                tag:
+                  type: string
+                  default: plumProAPI
+                  description: "Please use 'plumProAPI' always in tag."
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/FiltersData'
+            example:
+              query: plumProAPI.mutation.getFilters
+              tag: plumProAPI
+              variables:
+                data:
+                  filterGroupCode: Country
+                  includeFilters: ""
+                  excludeFilters: ""
+      responses:
+        "200":
+          description: Filter groups returned successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FiltersResponse'
+              example:
+                data:
+                  getFilters:
+                    status: 1
+                    data:
+                      - filterGroupName: Country
+                        filterGroupDescription: ""
+                        filterGroupCode: country
+                        filters:
+                          - filterValue: Afghanistan
+                            isoCode: AF
+                            filterValueCode: afghanistan
+                          - filterValue: India
+                            isoCode: IN
+                            filterValueCode: india
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/giftcard/getVouchers:
+    post:
+      operationId: giftcardGetVouchers
+      summary: Get Vouchers API
+      description: >
+        GetVouchers API enables the user to get a list of vouchers with desired
+        filters available with the Xoxoday catalog.
+
+        **Note:**
+        1. To fetch `exchangeRate` pass `"exchangeRate": 1` in the request body.
+        2. Use `getFilters` API to get available filter values.
+        3. We recommend caching the response every time you sync the catalog.
+
+        Real URL: `POST /v1/oauth/api`
+      tags: [Giftcard API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  default: plumProAPI.mutation.getVouchers
+                  description: "Please use 'plumProAPI.mutation.getVouchers' always in query."
+                tag:
+                  type: string
+                  default: plumProAPI
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/VouchersData'
+            example:
+              query: plumProAPI.mutation.getVouchers
+              tag: plumProAPI
+              variables:
+                data:
+                  limit: 10
+                  page: 1
+                  exchangeRate: 1
+                  sort: { field: name, order: ASC }
+                  filters:
+                    - key: country
+                      value: IN
+      responses:
+        "200":
+          description: Voucher catalog returned successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VouchersResponse'
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/giftcard/getBalance:
+    post:
+      operationId: giftcardGetBalance
+      summary: Get Balance API
+      description: >
+        Balance API allows you to fetch the available balance in your Admin wallet.
+
+        Rather than fetching the balance before every order, use the Low Balance
+        Notification option in the Admin Dashboard to receive alerts.
+
+        Real URL: `POST /v1/oauth/api`
+      tags: [Giftcard API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  default: plumProAPI.query.getBalance
+                  description: "Please use 'plumProAPI.query.getBalance' always in query."
+                tag:
+                  type: string
+                  default: plumProAPI
+                variables:
+                  type: object
+                  properties:
+                    data:
+                      type: object
+            example:
+              query: plumProAPI.query.getBalance
+              tag: plumProAPI
+              variables:
+                data: {}
+      responses:
+        "200":
+          description: Wallet balance returned successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BalanceResponse'
+              example:
+                data:
+                  getBalance:
+                    status: 1
+                    data:
+                      value: 5870.02
+                      currency: INR
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/giftcard/placeOrder:
+    post:
+      operationId: giftcardPlaceOrder
+      summary: Place Order API
+      description: >
+        The PlaceOrderAPI enables the client to place an order for vouchers
+        available with Xoxoday.
+
+        **Note:**
+        1. A unique reference ID must be sent for every unique order in `poNumber`.
+        2. Maximum order quantity for most products is 10 unless specified in `orderQuantityLimit`.
+        3. If you receive a 5xx error, call `getOrderDetails` to confirm if an order exists using `poNumber` before retrying.
+        4. We strongly recommend storing the request and response of every PlaceOrder call.
+
+        Real URL: `POST /v1/oauth/api`
+      tags: [Giftcard API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  default: plumProAPI.mutation.placeOrder
+                  description: "Please use 'plumProAPI.mutation.placeOrder' always in query."
+                tag:
+                  type: string
+                  default: plumProAPI
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/PlaceOrderData'
+            example:
+              query: plumProAPI.mutation.placeOrder
+              tag: plumProAPI
+              variables:
+                data:
+                  productId: "55395"
+                  quantity: "1"
+                  denomination: "50"
+                  poNumber: PO12662
+                  email: recipient@example.com
+                  contact: "+1-4705000000"
+                  tag: employee_reward
+                  notifyReceiverEmail: 1
+                  notifyAdminEmail: 0
+      responses:
+        "200":
+          description: Order placed successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceOrderResponse'
+              example:
+                data:
+                  placeOrder:
+                    status: 1
+                    data:
+                      orderId: 6552967
+                      orderTotal: 8.79
+                      currencyCode: INR
+                      amountCharged: 8.79
+                      orderStatus: complete
+                      deliveryStatus: delivered
+                      quantity: 1
+                      vouchers:
+                        - productId: 55395
+                          orderId: 6552967
+                          voucherCode: "https://stagingstores.plum.gift/3YEyDBWOeuYnyzpD"
+                          pin: ""
+                          validity: "2026-08-19"
+                          amount: 50
+                          currency: USD
+                          type: url
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/giftcard/getOrderDetails:
+    post:
+      operationId: giftcardGetOrderDetails
+      summary: Get Order Details API
+      description: >
+        With the help of this endpoint you can fetch the order details of a
+        specific order. Fetch by either `orderId` OR `poNumber`.
+
+        **Note:**
+        1. Do not use this API to poll order status for delayed delivery — use Webhooks instead.
+        2. You can fetch order details using `poNumber` OR `orderId`.
+
+        Real URL: `POST /v1/oauth/api`
+      tags: [Giftcard API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  default: plumProAPI.mutation.getOrderDetails
+                  description: "Please use 'plumProAPI.mutation.getOrderDetails' always in query."
+                tag:
+                  type: string
+                  default: plumProAPI
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/OrderDetailsData'
+            example:
+              query: plumProAPI.mutation.getOrderDetails
+              tag: plumProAPI
+              variables:
+                data:
+                  poNumber: PO123
+                  orderId: 0
+                  sendMailToReceiver: 0
+      responses:
+        "200":
+          description: Order details returned successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetailsResponse'
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/giftcard/getOrderHistory:
+    post:
+      operationId: giftcardGetOrderHistory
+      summary: Get Order History API
+      description: >
+        Allows you to fetch details of orders historically within a specified timeframe.
+
+        Real URL: `POST /v1/oauth/api`
+      tags: [Giftcard API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  default: plumProAPI.mutation.getOrderHistory
+                  description: "Please use 'plumProAPI.mutation.getOrderHistory' always in query."
+                tag:
+                  type: string
+                  default: plumProAPI
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/OrderHistoryData'
+            example:
+              query: plumProAPI.mutation.getOrderHistory
+              tag: plumProAPI
+              variables:
+                data:
+                  startDate: "2026-01-01"
+                  endDate: "2026-04-14"
+                  limit: 10
+                  page: 1
+      responses:
+        "200":
+          description: Order history returned successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderHistoryResponse'
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/giftcard/paymentHistory:
+    post:
+      operationId: giftcardPaymentHistory
+      summary: Get Payment Report API
+      description: >
+        This API provides the payment history for reconciliation and settlement purposes.
+
+        Real URL: `POST /v1/oauth/api`
+      tags: [Giftcard API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag]
+              properties:
+                query:
+                  type: string
+                  default: plumProAPI.mutation.paymentHistory
+                  description: "Please use 'plumProAPI.mutation.paymentHistory' always in query."
+                tag:
+                  type: string
+                  default: plumProAPI
+                data:
+                  type: object
+                  properties:
+                    data:
+                      $ref: '#/components/schemas/OrderHistoryData'
+            example:
+              query: plumProAPI.mutation.paymentHistory
+              tag: plumProAPI
+              data:
+                data:
+                  startDate: "2026-01-01"
+                  endDate: "2026-04-14"
+                  limit: 10
+                  page: 1
+      responses:
+        "200":
+          description: Payment report returned successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentReportResponse'
+              example:
+                data:
+                  getPaymentReport:
+                    status: 1
+                    data:
+                      - invoice_number: N3352A
+                        reference_id: zYEgsdgUTZA3
+                        date: "2023-06-01"
+                        reason: Brand vouchers issued
+                        adjusted_amount: 100
+                        transaction_status: Complete
+                        closing_balance: 97690
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # LOUNGE API
+  # ───────────────────────────────────────────────────────────────────────────
+
+  /v1/oauth/api/lounge/getFilters:
+    post:
+      operationId: loungeGetFilters
+      summary: Get Filters API
+      description: "Retrieve available filters for the Lounge catalog. Real URL: `POST /v1/oauth/api`"
+      tags: [Lounge API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getFilters }
+                tag: { type: string, default: plumProAPI }
+                variables:
+                  type: object
+                  properties:
+                    data: { $ref: '#/components/schemas/FiltersData' }
+            example:
+              query: plumProAPI.mutation.getFilters
+              tag: plumProAPI
+              variables:
+                data: { filterGroupCode: "", includeFilters: "", excludeFilters: "" }
+      responses:
+        "200":
+          description: Filters returned.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/FiltersResponse' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/lounge/getCatalog:
+    post:
+      operationId: loungeGetCatalog
+      summary: Get Lounge Catalog
+      description: "With the Fetch Lounge Catalog API, you can retrieve a curated list of available lounges across the globe. Real URL: `POST /v1/oauth/api`"
+      tags: [Lounge API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getVouchers }
+                tag: { type: string, default: plumProAPI }
+                variables:
+                  type: object
+                  properties:
+                    data: { $ref: '#/components/schemas/VouchersData' }
+            example:
+              query: plumProAPI.mutation.getVouchers
+              tag: plumProAPI
+              variables:
+                data: { limit: 10, page: 1, exchangeRate: 1 }
+      responses:
+        "200":
+          description: Lounge catalog returned.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VouchersResponse' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/lounge/getBalance:
+    post:
+      operationId: loungeGetBalance
+      summary: Get Balance API
+      description: "Balance API allows you to fetch the available balance in your Admin wallet. Real URL: `POST /v1/oauth/api`"
+      tags: [Lounge API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.query.getBalance }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { type: object } } }
+            example:
+              query: plumProAPI.query.getBalance
+              tag: plumProAPI
+              variables: { data: {} }
+      responses:
+        "200":
+          description: Balance returned.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/BalanceResponse' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/lounge/placeOrder:
+    post:
+      operationId: loungePlaceOrder
+      summary: Place Order API
+      description: "With Place Order API, you can place orders of Lounge available in the Catalog. Real URL: `POST /v1/oauth/api`"
+      tags: [Lounge API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.placeOrder }
+                tag: { type: string, default: plumProAPI }
+                variables:
+                  type: object
+                  properties:
+                    data: { $ref: '#/components/schemas/PlaceOrderData' }
+            example:
+              query: plumProAPI.mutation.placeOrder
+              tag: plumProAPI
+              variables:
+                data:
+                  productId: "12345"
+                  quantity: "1"
+                  denomination: "100"
+                  poNumber: LOUNGE-001
+                  email: traveller@example.com
+      responses:
+        "200":
+          description: Lounge order placed.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PlaceOrderResponse' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/lounge/getOrderDetails:
+    post:
+      operationId: loungeGetOrderDetails
+      summary: Get Order Details API
+      description: "With Fetch Order Details API, you can fetch the order details of a specific order by passing the order ID or PO Number. Real URL: `POST /v1/oauth/api`"
+      tags: [Lounge API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getOrderDetails }
+                tag: { type: string, default: plumProAPI }
+                variables:
+                  type: object
+                  properties:
+                    data: { $ref: '#/components/schemas/OrderDetailsData' }
+            example:
+              query: plumProAPI.mutation.getOrderDetails
+              tag: plumProAPI
+              variables:
+                data: { poNumber: "LOUNGE-001", orderId: 0, sendMailToReceiver: 0 }
+      responses:
+        "200":
+          description: Order details returned.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderDetailsResponse' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/lounge/getOrderHistory:
+    post:
+      operationId: loungeGetOrderHistory
+      summary: Get Order History
+      description: "Fetch Order History API allows you to fetch all orders placed for the lounge category for a specific timeline. Real URL: `POST /v1/oauth/api`"
+      tags: [Lounge API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getOrderHistory }
+                tag: { type: string, default: plumProAPI }
+                variables:
+                  type: object
+                  properties:
+                    data: { $ref: '#/components/schemas/OrderHistoryData' }
+            example:
+              query: plumProAPI.mutation.getOrderHistory
+              tag: plumProAPI
+              variables:
+                data: { startDate: "2026-01-01", endDate: "2026-04-14", limit: 10, page: 1 }
+      responses:
+        "200":
+          description: Order history returned.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/OrderHistoryResponse' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/lounge/paymentHistory:
+    post:
+      operationId: loungePaymentHistory
+      summary: Get Payment Report API
+      description: "This API provides the payment history for lounge orders. Real URL: `POST /v1/oauth/api`"
+      tags: [Lounge API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.paymentHistory }
+                tag: { type: string, default: plumProAPI }
+                data:
+                  type: object
+                  properties:
+                    data: { $ref: '#/components/schemas/OrderHistoryData' }
+            example:
+              query: plumProAPI.mutation.paymentHistory
+              tag: plumProAPI
+              data:
+                data: { startDate: "2026-01-01", endDate: "2026-04-14", limit: 10, page: 1 }
+      responses:
+        "200":
+          description: Payment report returned.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/PaymentReportResponse' }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # AIRMILES API
+  # ───────────────────────────────────────────────────────────────────────────
+
+  /v1/oauth/api/airmiles/getFilters:
+    post:
+      operationId: airmilesGetFilters
+      summary: Get Filters API
+      description: "Retrieve available filters for the Airmiles catalog. Real URL: `POST /v1/oauth/api`"
+      tags: [Airmiles API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getFilters }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { $ref: '#/components/schemas/FiltersData' } } }
+            example:
+              query: plumProAPI.mutation.getFilters
+              tag: plumProAPI
+              variables: { data: { filterGroupCode: "", includeFilters: "", excludeFilters: "" } }
+      responses:
+        "200": { description: Filters returned., content: { application/json: { schema: { $ref: '#/components/schemas/FiltersResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/airmiles/getCatalog:
+    post:
+      operationId: airmilesGetCatalog
+      summary: Get Airmiles Catalog API
+      description: "With the Airmiles Catalog API, you can retrieve a curated list of available Airmiles programs to transfer miles. Real URL: `POST /v1/oauth/api`"
+      tags: [Airmiles API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getVouchers }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { $ref: '#/components/schemas/VouchersData' } } }
+            example:
+              query: plumProAPI.mutation.getVouchers
+              tag: plumProAPI
+              variables: { data: { limit: 10, page: 1 } }
+      responses:
+        "200": { description: Airmiles catalog returned., content: { application/json: { schema: { $ref: '#/components/schemas/VouchersResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/airmiles/getBalance:
+    post:
+      operationId: airmilesGetBalance
+      summary: Get Balance API
+      description: "Fetch the available Admin wallet balance. Real URL: `POST /v1/oauth/api`"
+      tags: [Airmiles API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.query.getBalance }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { type: object } } }
+            example: { query: plumProAPI.query.getBalance, tag: plumProAPI, variables: { data: {} } }
+      responses:
+        "200": { description: Balance returned., content: { application/json: { schema: { $ref: '#/components/schemas/BalanceResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/airmiles/placeOrder:
+    post:
+      operationId: airmilesPlaceOrder
+      summary: Place Order API
+      description: "With Place Order API, you can place orders of Airmiles available in the Catalog. Real URL: `POST /v1/oauth/api`"
+      tags: [Airmiles API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.placeOrder }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { $ref: '#/components/schemas/PlaceOrderData' } } }
+            example:
+              query: plumProAPI.mutation.placeOrder
+              tag: plumProAPI
+              variables: { data: { productId: "78901", quantity: "1", denomination: "500", poNumber: "MILES-001", email: "traveller@example.com" } }
+      responses:
+        "200": { description: Airmiles order placed., content: { application/json: { schema: { $ref: '#/components/schemas/PlaceOrderResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/airmiles/getOrderDetails:
+    post:
+      operationId: airmilesGetOrderDetails
+      summary: Get Order Details API
+      description: "Fetch the order details of a specific Airmiles order. Real URL: `POST /v1/oauth/api`"
+      tags: [Airmiles API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getOrderDetails }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { $ref: '#/components/schemas/OrderDetailsData' } } }
+            example: { query: plumProAPI.mutation.getOrderDetails, tag: plumProAPI, variables: { data: { poNumber: "MILES-001", orderId: 0 } } }
+      responses:
+        "200": { description: Order details returned., content: { application/json: { schema: { $ref: '#/components/schemas/OrderDetailsResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/airmiles/getOrderHistory:
+    post:
+      operationId: airmilesGetOrderHistory
+      summary: Get Order History API
+      description: "Fetch historical Airmiles orders within a specified timeframe. Real URL: `POST /v1/oauth/api`"
+      tags: [Airmiles API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getOrderHistory }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { $ref: '#/components/schemas/OrderHistoryData' } } }
+            example: { query: plumProAPI.mutation.getOrderHistory, tag: plumProAPI, variables: { data: { startDate: "2026-01-01", endDate: "2026-04-14", limit: 10, page: 1 } } }
+      responses:
+        "200": { description: Order history returned., content: { application/json: { schema: { $ref: '#/components/schemas/OrderHistoryResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/airmiles/paymentHistory:
+    post:
+      operationId: airmilesPaymentHistory
+      summary: Get Payment Report API
+      description: "Payment history for Airmiles orders. Real URL: `POST /v1/oauth/api`"
+      tags: [Airmiles API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query: { type: string, default: plumProAPI.mutation.paymentHistory }
+                tag: { type: string, default: plumProAPI }
+                data: { type: object, properties: { data: { $ref: '#/components/schemas/OrderHistoryData' } } }
+            example: { query: plumProAPI.mutation.paymentHistory, tag: plumProAPI, data: { data: { startDate: "2026-01-01", endDate: "2026-04-14", limit: 10, page: 1 } } }
+      responses:
+        "200": { description: Payment report returned., content: { application/json: { schema: { $ref: '#/components/schemas/PaymentReportResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # CHARITY API
+  # ───────────────────────────────────────────────────────────────────────────
+
+  /v1/oauth/api/charity/getFilters:
+    post:
+      operationId: charityGetFilters
+      summary: Get Filters API
+      description: "Retrieve available filters for the Charity catalog. Real URL: `POST /v1/oauth/api`"
+      tags: [Charity API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getFilters }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { $ref: '#/components/schemas/FiltersData' } } }
+            example: { query: plumProAPI.mutation.getFilters, tag: plumProAPI, variables: { data: { filterGroupCode: "", includeFilters: "", excludeFilters: "" } } }
+      responses:
+        "200": { description: Filters returned., content: { application/json: { schema: { $ref: '#/components/schemas/FiltersResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/charity/getCatalog:
+    post:
+      operationId: charityGetCatalog
+      summary: Get Charity Catalog
+      description: "Browse available charity organisations. Real URL: `POST /v1/oauth/api`"
+      tags: [Charity API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getVouchers }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { $ref: '#/components/schemas/VouchersData' } } }
+            example: { query: plumProAPI.mutation.getVouchers, tag: plumProAPI, variables: { data: { limit: 10, page: 1 } } }
+      responses:
+        "200": { description: Charity catalog returned., content: { application/json: { schema: { $ref: '#/components/schemas/VouchersResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/charity/getBalance:
+    post:
+      operationId: charityGetBalance
+      summary: Get Balance API
+      description: "Fetch Admin wallet balance. Real URL: `POST /v1/oauth/api`"
+      tags: [Charity API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query: { type: string, default: plumProAPI.query.getBalance }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object }
+            example: { query: plumProAPI.query.getBalance, tag: plumProAPI, variables: { data: {} } }
+      responses:
+        "200": { description: Balance returned., content: { application/json: { schema: { $ref: '#/components/schemas/BalanceResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/charity/placeOrder:
+    post:
+      operationId: charityPlaceOrder
+      summary: Place Order API
+      description: "Donate to a charity by placing an order. Real URL: `POST /v1/oauth/api`"
+      tags: [Charity API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.placeOrder }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { $ref: '#/components/schemas/PlaceOrderData' } } }
+            example: { query: plumProAPI.mutation.placeOrder, tag: plumProAPI, variables: { data: { productId: "11111", quantity: "1", denomination: "100", poNumber: "CHARITY-001", email: "donor@example.com" } } }
+      responses:
+        "200": { description: Charity order placed., content: { application/json: { schema: { $ref: '#/components/schemas/PlaceOrderResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/charity/getOrderDetails:
+    post:
+      operationId: charityGetOrderDetails
+      summary: Get Order Details API
+      description: "Fetch order details for a specific charity donation order. Real URL: `POST /v1/oauth/api`"
+      tags: [Charity API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getOrderDetails }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { $ref: '#/components/schemas/OrderDetailsData' } } }
+            example: { query: plumProAPI.mutation.getOrderDetails, tag: plumProAPI, variables: { data: { poNumber: "CHARITY-001", orderId: 0 } } }
+      responses:
+        "200": { description: Order details returned., content: { application/json: { schema: { $ref: '#/components/schemas/OrderDetailsResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/charity/getOrderHistory:
+    post:
+      operationId: charityGetOrderHistory
+      summary: Get Order History API
+      description: "Fetch historical charity donation orders. Real URL: `POST /v1/oauth/api`"
+      tags: [Charity API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getOrderHistory }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { $ref: '#/components/schemas/OrderHistoryData' } } }
+            example: { query: plumProAPI.mutation.getOrderHistory, tag: plumProAPI, variables: { data: { startDate: "2026-01-01", endDate: "2026-04-14", limit: 10, page: 1 } } }
+      responses:
+        "200": { description: Order history returned., content: { application/json: { schema: { $ref: '#/components/schemas/OrderHistoryResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/charity/paymentHistory:
+    post:
+      operationId: charityPaymentHistory
+      summary: Get Payment Report API
+      description: "Payment history for charity orders. Real URL: `POST /v1/oauth/api`"
+      tags: [Charity API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query: { type: string, default: plumProAPI.mutation.paymentHistory }
+                tag: { type: string, default: plumProAPI }
+                data: { type: object, properties: { data: { $ref: '#/components/schemas/OrderHistoryData' } } }
+            example: { query: plumProAPI.mutation.paymentHistory, tag: plumProAPI, data: { data: { startDate: "2026-01-01", endDate: "2026-04-14", limit: 10, page: 1 } } }
+      responses:
+        "200": { description: Payment report returned., content: { application/json: { schema: { $ref: '#/components/schemas/PaymentReportResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # MERCHANDISE API
+  # ───────────────────────────────────────────────────────────────────────────
+
+  /v1/oauth/api/merchandise/getFilters:
+    post:
+      operationId: merchandiseGetFilters
+      summary: Get Filters API
+      description: "Retrieve available filters for the Merchandise catalog. Real URL: `POST /v1/oauth/api`"
+      tags: [Merchandise API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getFilters }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { $ref: '#/components/schemas/FiltersData' } } }
+            example: { query: plumProAPI.mutation.getFilters, tag: plumProAPI, variables: { data: { filterGroupCode: "", includeFilters: "", excludeFilters: "" } } }
+      responses:
+        "200": { description: Filters returned., content: { application/json: { schema: { $ref: '#/components/schemas/FiltersResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/merchandise/getCatalog:
+    post:
+      operationId: merchandiseGetCatalog
+      summary: Get Merchandise API
+      description: "Browse available merchandise products. Real URL: `POST /v1/oauth/api`"
+      tags: [Merchandise API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getVouchers }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { $ref: '#/components/schemas/VouchersData' } } }
+            example: { query: plumProAPI.mutation.getVouchers, tag: plumProAPI, variables: { data: { limit: 10, page: 1 } } }
+      responses:
+        "200": { description: Merchandise catalog returned., content: { application/json: { schema: { $ref: '#/components/schemas/VouchersResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/merchandise/getBalance:
+    post:
+      operationId: merchandiseGetBalance
+      summary: Get Balance API
+      description: "Fetch Admin wallet balance. Real URL: `POST /v1/oauth/api`"
+      tags: [Merchandise API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query: { type: string, default: plumProAPI.query.getBalance }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object }
+            example: { query: plumProAPI.query.getBalance, tag: plumProAPI, variables: { data: {} } }
+      responses:
+        "200": { description: Balance returned., content: { application/json: { schema: { $ref: '#/components/schemas/BalanceResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/merchandise/placeOrder:
+    post:
+      operationId: merchandisePlaceOrder
+      summary: Place Order API
+      description: "Place an order for a merchandise item. Real URL: `POST /v1/oauth/api`"
+      tags: [Merchandise API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.placeOrder }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { $ref: '#/components/schemas/PlaceOrderData' } } }
+            example: { query: plumProAPI.mutation.placeOrder, tag: plumProAPI, variables: { data: { productId: "22222", quantity: "1", denomination: "200", poNumber: "MERCH-001", email: "buyer@example.com" } } }
+      responses:
+        "200": { description: Merchandise order placed., content: { application/json: { schema: { $ref: '#/components/schemas/PlaceOrderResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/merchandise/getOrderDetails:
+    post:
+      operationId: merchandiseGetOrderDetails
+      summary: Get Order Details API
+      description: "Fetch order details of a specific merchandise order. Real URL: `POST /v1/oauth/api`"
+      tags: [Merchandise API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getOrderDetails }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { $ref: '#/components/schemas/OrderDetailsData' } } }
+            example: { query: plumProAPI.mutation.getOrderDetails, tag: plumProAPI, variables: { data: { poNumber: "MERCH-001", orderId: 0 } } }
+      responses:
+        "200": { description: Order details returned., content: { application/json: { schema: { $ref: '#/components/schemas/OrderDetailsResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/merchandise/getOrderHistory:
+    post:
+      operationId: merchandiseGetOrderHistory
+      summary: Get Order History API
+      description: "Fetch historical merchandise orders. Real URL: `POST /v1/oauth/api`"
+      tags: [Merchandise API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getOrderHistory }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { $ref: '#/components/schemas/OrderHistoryData' } } }
+            example: { query: plumProAPI.mutation.getOrderHistory, tag: plumProAPI, variables: { data: { startDate: "2026-01-01", endDate: "2026-04-14", limit: 10, page: 1 } } }
+      responses:
+        "200": { description: Order history returned., content: { application/json: { schema: { $ref: '#/components/schemas/OrderHistoryResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/merchandise/paymentHistory:
+    post:
+      operationId: merchandisePaymentHistory
+      summary: Get Payment Reports API
+      description: "Payment history for merchandise orders. Real URL: `POST /v1/oauth/api`"
+      tags: [Merchandise API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query: { type: string, default: plumProAPI.mutation.paymentHistory }
+                tag: { type: string, default: plumProAPI }
+                data: { type: object, properties: { data: { $ref: '#/components/schemas/OrderHistoryData' } } }
+            example: { query: plumProAPI.mutation.paymentHistory, tag: plumProAPI, data: { data: { startDate: "2026-01-01", endDate: "2026-04-14", limit: 10, page: 1 } } }
+      responses:
+        "200": { description: Payment report returned., content: { application/json: { schema: { $ref: '#/components/schemas/PaymentReportResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # MOBILE TOP UP API
+  # ───────────────────────────────────────────────────────────────────────────
+
+  /v1/oauth/api/mobile-topup/getFilters:
+    post:
+      operationId: mobileTopUpGetFilters
+      summary: Get Filters API
+      description: "Retrieve available filters for Mobile Top-Up. Real URL: `POST /v1/oauth/api`"
+      tags: [Mobile Top Up API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getFilters }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { $ref: '#/components/schemas/FiltersData' } } }
+            example: { query: plumProAPI.mutation.getFilters, tag: plumProAPI, variables: { data: { filterGroupCode: "", includeFilters: "", excludeFilters: "" } } }
+      responses:
+        "200": { description: Filters returned., content: { application/json: { schema: { $ref: '#/components/schemas/FiltersResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/mobile-topup/getCatalog:
+    post:
+      operationId: mobileTopUpGetCatalog
+      summary: Get Mobile Top Up Catalog
+      description: "With the Get Mobile Top Up Catalog API, you can retrieve a curated list of available operators and the plans. Real URL: `POST /v1/oauth/api`"
+      tags: [Mobile Top Up API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getVouchers }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { $ref: '#/components/schemas/VouchersData' } } }
+            example: { query: plumProAPI.mutation.getVouchers, tag: plumProAPI, variables: { data: { limit: 10, page: 1, filters: [{ key: country, value: IN }] } } }
+      responses:
+        "200": { description: Top-up catalog returned., content: { application/json: { schema: { $ref: '#/components/schemas/VouchersResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/mobile-topup/getMobileOperator:
+    post:
+      operationId: getMobileOperator
+      summary: Get Mobile Operator API
+      description: >
+        Returns the mobile operator details for a given mobile number to enable
+        accurate operator selection before placing a top-up order.
+
+        Real URL: `POST /v1/oauth/api`
+      tags: [Mobile Top Up API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getVouchers }
+                tag: { type: string, default: plumProAPI }
+                variables:
+                  type: object
+                  properties:
+                    data:
+                      type: object
+                      properties:
+                        mobileNumber: { type: string, description: Mobile number to look up operator for. }
+                        countryCode: { type: string, description: ISO country code. }
+            example: { query: plumProAPI.mutation.getVouchers, tag: plumProAPI, variables: { data: { mobileNumber: "9876543210", countryCode: "IN" } } }
+      responses:
+        "200": { description: Mobile operator details returned., content: { application/json: { schema: { type: object } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/mobile-topup/getBalance:
+    post:
+      operationId: mobileTopUpGetBalance
+      summary: Get Balance API
+      description: "Fetch Admin wallet balance. Real URL: `POST /v1/oauth/api`"
+      tags: [Mobile Top Up API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query: { type: string, default: plumProAPI.query.getBalance }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object }
+            example: { query: plumProAPI.query.getBalance, tag: plumProAPI, variables: { data: {} } }
+      responses:
+        "200": { description: Balance returned., content: { application/json: { schema: { $ref: '#/components/schemas/BalanceResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/mobile-topup/placeOrder:
+    post:
+      operationId: mobileTopUpPlaceOrder
+      summary: Place Order API
+      description: "With Place Order API, you can place orders for mobile top-up plans available in the Catalog. Real URL: `POST /v1/oauth/api`"
+      tags: [Mobile Top Up API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.placeOrder }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { $ref: '#/components/schemas/PlaceOrderData' } } }
+            example: { query: plumProAPI.mutation.placeOrder, tag: plumProAPI, variables: { data: { productId: "98765", quantity: "1", denomination: "100", poNumber: "TOPUP-001", email: "user@example.com", contact: "+919876543210" } } }
+      responses:
+        "200": { description: Top-up order placed., content: { application/json: { schema: { $ref: '#/components/schemas/PlaceOrderResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/mobile-topup/getOrderDetails:
+    post:
+      operationId: mobileTopUpGetOrderDetails
+      summary: Get Order Details API
+      description: "Fetch order details of a specific mobile top-up order. Real URL: `POST /v1/oauth/api`"
+      tags: [Mobile Top Up API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getOrderDetails }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { $ref: '#/components/schemas/OrderDetailsData' } } }
+            example: { query: plumProAPI.mutation.getOrderDetails, tag: plumProAPI, variables: { data: { poNumber: "TOPUP-001", orderId: 0 } } }
+      responses:
+        "200": { description: Order details returned., content: { application/json: { schema: { $ref: '#/components/schemas/OrderDetailsResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/mobile-topup/getOrderHistory:
+    post:
+      operationId: mobileTopUpGetOrderHistory
+      summary: Get Order History API
+      description: "Fetch historical mobile top-up orders. Real URL: `POST /v1/oauth/api`"
+      tags: [Mobile Top Up API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getOrderHistory }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { $ref: '#/components/schemas/OrderHistoryData' } } }
+            example: { query: plumProAPI.mutation.getOrderHistory, tag: plumProAPI, variables: { data: { startDate: "2026-01-01", endDate: "2026-04-14", limit: 10, page: 1 } } }
+      responses:
+        "200": { description: Order history returned., content: { application/json: { schema: { $ref: '#/components/schemas/OrderHistoryResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/mobile-topup/paymentHistory:
+    post:
+      operationId: mobileTopUpPaymentHistory
+      summary: Get Payment Reports API
+      description: "Payment history for mobile top-up orders. Real URL: `POST /v1/oauth/api`"
+      tags: [Mobile Top Up API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query: { type: string, default: plumProAPI.mutation.paymentHistory }
+                tag: { type: string, default: plumProAPI }
+                data: { type: object, properties: { data: { $ref: '#/components/schemas/OrderHistoryData' } } }
+            example: { query: plumProAPI.mutation.paymentHistory, tag: plumProAPI, data: { data: { startDate: "2026-01-01", endDate: "2026-04-14", limit: 10, page: 1 } } }
+      responses:
+        "200": { description: Payment report returned., content: { application/json: { schema: { $ref: '#/components/schemas/PaymentReportResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # PERKS API
+  # ───────────────────────────────────────────────────────────────────────────
+
+  /v1/oauth/api/perks/getFilters:
+    post:
+      operationId: perksGetFilters
+      summary: Get Filters API
+      description: "Retrieve available filters for the Perks catalog. Real URL: `POST /v1/oauth/api`"
+      tags: [Perks API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getFilters }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { $ref: '#/components/schemas/FiltersData' } } }
+            example: { query: plumProAPI.mutation.getFilters, tag: plumProAPI, variables: { data: { filterGroupCode: "", includeFilters: "", excludeFilters: "" } } }
+      responses:
+        "200": { description: Filters returned., content: { application/json: { schema: { $ref: '#/components/schemas/FiltersResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/perks/getVouchers:
+    post:
+      operationId: perksGetVouchers
+      summary: Get Vouchers API
+      description: "Browse available perks and subscription vouchers. Real URL: `POST /v1/oauth/api`"
+      tags: [Perks API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: plumProAPI.mutation.getVouchers }
+                tag: { type: string, default: plumProAPI }
+                variables: { type: object, properties: { data: { $ref: '#/components/schemas/VouchersData' } } }
+            example: { query: plumProAPI.mutation.getVouchers, tag: plumProAPI, variables: { data: { limit: 10, page: 1 } } }
+      responses:
+        "200": { description: Perks catalog returned., content: { application/json: { schema: { $ref: '#/components/schemas/VouchersResponse' } } } }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # REWARD LINK API
+  # ───────────────────────────────────────────────────────────────────────────
+
+  /v1/oauth/api/links/getCampaigns:
+    post:
+      operationId: getCampaigns
+      summary: Get Campaigns API
+      description: >
+        The Get Campaigns API is useful to get the list of all the campaigns
+        created from the dashboard.
+
+        Real URL: `POST /v1/oauth/api`
+      tags: [Reward Link API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  default: xoxo_link.query.campaignList
+                  description: "Please use 'xoxo_link.query.campaignList' always in query."
+                tag:
+                  type: string
+                  default: xoxo_link
+                  description: "Please use 'xoxo_link' always in tag."
+                variables:
+                  type: object
+                  required: [add_data]
+                  properties:
+                    add_data:
+                      type: object
+                      properties:
+                        limit: { type: integer, description: Number of campaigns to fetch. }
+                        offset: { type: integer, description: Starting index for pagination. }
+                        name: { type: string, description: Filter campaigns by name. }
+                        enabled: { type: integer, enum: [0, 1], description: "1 = enabled, 0 = disabled." }
+            example:
+              query: xoxo_link.query.campaignList
+              tag: xoxo_link
+              variables:
+                add_data: { limit: 10, offset: 0, name: "", enabled: 1 }
+      responses:
+        "200":
+          description: Campaign list returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      campaignList:
+                        type: object
+                        properties:
+                          success: { type: integer }
+                          data:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                campaignId: { type: integer }
+                                campaignName: { type: string }
+                                denomination_value: { type: number }
+                                countryName: { type: string }
+                                currencyCode: { type: string }
+                                created_date: { type: string }
+                                product_count: { type: string }
+                                status: { type: integer }
+                          count: { type: integer }
+                          errors: { type: string, nullable: true }
+              example:
+                data:
+                  campaignList:
+                    success: 1
+                    data:
+                      - campaignId: 2461
+                        campaignName: Test Campaign
+                        denomination_value: 10
+                        countryName: USA
+                        currencyCode: USD
+                        created_date: "0000-00-00 00:00:00"
+                        product_count: "1"
+                        status: 1
+                    count: 1
+                    errors: null
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/sendLinks:
+    post:
+      operationId: sendLinks
+      summary: Send Link API
+      description: >
+        The Send Link API generates a unique reward link for an email address
+        and delivers it to the user's inbox. It is ideal for automating reward
+        distribution and notifications.
+
+        **Real URL:** `POST https://canvas.xoxoday.com/chef/v1/oauth/api/sendLinks`
+      tags: [Reward Link API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  default: xoxo_link.mutation.generateLinkEmail
+                  description: "Please use 'xoxo_link.mutation.generateLinkEmail' always in query."
+                tag:
+                  type: string
+                  default: xoxo_link
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      type: object
+                      required: [campaignId, email_ids, link_expiry]
+                      properties:
+                        campaignId: { type: string, description: Unique identifier of the campaign. }
+                        email_ids: { type: string, description: Comma-separated recipient email addresses. }
+                        link_expiry: { type: string, description: "Expiry date — DD-MM-YYYY format." }
+            example:
+              query: xoxo_link.mutation.generateLinkEmail
+              tag: xoxo_link
+              variables:
+                data:
+                  campaignId: "2455"
+                  email_ids: "alice@example.com,bob@example.com"
+                  link_expiry: "31-07-2026"
+      responses:
+        "200":
+          description: Links sent successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      generateLink:
+                        type: object
+                        properties:
+                          success: { type: integer }
+                          message: { type: string }
+              example:
+                data:
+                  generateLink:
+                    success: 1
+                    message: Links created successfully
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/links/generateLinks:
+    post:
+      operationId: generateLinks
+      summary: Generate Link API
+      description: >
+        The Generate Link API allows you to generate links in bulk for reward
+        distribution. The API is useful for reward automation without the
+        recipient's email address.
+
+        Real URL: `POST /v1/oauth/api`
+      tags: [Reward Link API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: xoxo_link.mutation.generateLink }
+                tag: { type: string, default: xoxo_link }
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      type: object
+                      required: [campaignId, links_quantity, link_expiry]
+                      properties:
+                        campaignId: { type: string }
+                        links_quantity: { type: integer, description: Number of links to generate. }
+                        link_expiry: { type: string, description: "Expiry date — DD-MM-YYYY format." }
+            example:
+              query: xoxo_link.mutation.generateLink
+              tag: xoxo_link
+              variables:
+                data: { campaignId: "2455", links_quantity: 50, link_expiry: "31-07-2026" }
+      responses:
+        "200":
+          description: Links generated.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      generateLink:
+                        type: object
+                        properties:
+                          success: { type: integer }
+                          message: { type: string }
+                          links: { type: array, items: { type: string } }
+                          batchId: { type: string }
+                          campaignName: { type: string }
+                          denomination_value: { type: number }
+                          currencyCode: { type: string }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # REWARD POINTS API
+  # ───────────────────────────────────────────────────────────────────────────
+
+  /v1/oauth/api/points/send:
+    post:
+      operationId: sendPoints
+      summary: Send Points API
+      description: >
+        Credit reward points to one or more recipients from the Super Admin wallet.
+
+        Real URL: `POST /v1/oauth/api`
+      tags: [Reward Points API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  default: storesAdmin.mutation.sendBalance
+                  description: "Please use 'storesAdmin.mutation.sendBalance' always in query."
+                tag:
+                  type: string
+                  default: storeAdmin
+                variables:
+                  type: object
+                  required: [recipients_data]
+                  properties:
+                    recipients_data:
+                      type: object
+                      required: [sender_email, recipients]
+                      properties:
+                        sender_email: { type: string, format: email, description: Super Admin email sending the points. }
+                        expiry_month: { description: Points expiry in months., oneOf: [{ type: integer }, { type: string }] }
+                        recipients:
+                          type: array
+                          items:
+                            type: object
+                            required: [to_email, amount]
+                            properties:
+                              to_name: { type: string }
+                              to_email: { type: string, format: email }
+                              amount: { type: string, example: "500" }
+                              citation: { type: string }
+            example:
+              query: storesAdmin.mutation.sendBalance
+              tag: storeAdmin
+              variables:
+                recipients_data:
+                  sender_email: admin@company.com
+                  recipients:
+                    - to_name: Alice Smith
+                      to_email: alice@example.com
+                      amount: "500"
+                      citation: Congratulations
+      responses:
+        "200":
+          description: Points sent successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      sendBalance:
+                        type: object
+                        properties:
+                          error: { type: boolean }
+                          message: { type: string }
+              example:
+                data:
+                  sendBalance:
+                    error: false
+                    message: points sent
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/points/fetch:
+    post:
+      operationId: fetchPoints
+      summary: Fetch Points API
+      description: >
+        This API endpoint allows you to fetch points for each user
+        (which can be displayed inside your UI).
+
+        Real URL: `POST /v1/oauth/api`
+      tags: [Reward Points API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: storesAdmin.query.userBalance }
+                tag: { type: string, default: storeAdmin }
+                variables:
+                  type: object
+                  properties:
+                    user_data:
+                      type: object
+                      properties:
+                        email: { type: string, format: email, description: User's email ID to fetch balance. }
+                        phone: { type: string, description: User's phone number to fetch balance. }
+            example:
+              query: storesAdmin.query.userBalance
+              tag: storeAdmin
+              variables:
+                user_data:
+                  email: alice@example.com
+      responses:
+        "200":
+          description: User points balance returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      user_balance:
+                        type: object
+                        properties:
+                          success: { type: integer, example: 1 }
+                          message: { type: string, nullable: true }
+                          data:
+                            type: object
+                            properties:
+                              total: { type: number, description: Total available reward points. }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  /v1/oauth/api/points/cancel:
+    post:
+      operationId: cancelPoints
+      summary: Cancel Points API
+      description: >
+        This API allows you to cancel previously issued points for one or more
+        recipients using their unique transaction identifier.
+
+        Real URL: `POST /v1/oauth/api`
+      tags: [Reward Points API]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query: { type: string, default: storesAdmin.mutation.cancelBalance }
+                tag: { type: string, default: storeAdmin }
+                variables:
+                  type: object
+                  properties:
+                    recipients_data:
+                      type: object
+                      properties:
+                        recipients:
+                          type: array
+                          items:
+                            type: object
+                            required: [unique_id]
+                            properties:
+                              unique_id: { type: integer, description: Unique transaction ID to cancel. }
+            example:
+              query: storesAdmin.mutation.cancelBalance
+              tag: storeAdmin
+              variables:
+                recipients_data:
+                  recipients:
+                    - unique_id: 987654321
+      responses:
+        "200":
+          description: Cancellation result returned.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      cancelBalance:
+                        type: object
+                        properties:
+                          error: { type: boolean }
+                          message: { type: string }
+                          recipients:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                unique_id: { type: integer }
+                                success: { type: boolean }
+                                message: { type: string }
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "404": { $ref: '#/components/responses/NotFound' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ───────────────────────────────────────────────────────────────────────────
+  # STOREFRONT INTEGRATION API
+  # ───────────────────────────────────────────────────────────────────────────
+
+  /v1/oauth/redirect/stores/{ssoToken}:
+    get:
+      operationId: ssoRedirect
+      summary: SSO Storefront Redirect
+      description: >
+        Redirect the end-user's browser to the Xoxoday hosted StoreFront.
+        The `ssoToken` is obtained from the SSO Redirection API response.
+
+        - **Staging:** `https://stagingstores.xoxoday.com/chef/v1/oauth/redirect/stores/{ssoToken}`
+        - **Production:** `https://stores.xoxoday.com/chef/v1/oauth/redirect/stores/{ssoToken}`
+      tags: [Storefront Integration API]
+      security: []
+      parameters:
+        - name: ssoToken
+          in: path
+          required: true
+          schema: { type: string }
+          description: Token returned from the SSO Redirection API. Valid for 14 days.
+      responses:
+        "302":
+          description: Redirect to authenticated Xoxoday StoreFront session.
+        "401":
+          description: Invalid or expired SSO token.

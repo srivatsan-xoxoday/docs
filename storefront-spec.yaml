@@ -1,0 +1,319 @@
+openapi: 3.0.3
+
+info:
+  title: Xoxoday Storefront Integration API
+  version: "1.2"
+  description: |
+    APIs for integrating your platform with Xoxoday's hosted StoreFront via SSO.
+
+    All three endpoints in this spec are called **by the client against Xoxoday's servers**.
+    Every path resolves correctly against the default server — no virtual paths are used.
+
+    ---
+
+    **Client-implemented callbacks** (Get Balance, Get Profile, Refund, Update Redemption)
+    are APIs that **Xoxoday calls on your server**. They are not playground endpoints and
+    are not included here. Their request/response contracts are documented in the
+    corresponding markdown pages.
+
+servers:
+  - url: https://stagingstores.xoxoday.com/chef/v1/oauth
+    description: Sandbox
+  - url: https://stores.xoxoday.com/chef/v1/oauth
+    description: Production
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Authentication
+    description: Token management — validate and refresh access tokens.
+  - name: SSO
+    description: Single Sign-On redirection into Xoxoday StoreFront.
+
+# ─── Components ───────────────────────────────────────────────────────────────
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: "`Authorization: Bearer <access_token>`"
+
+  schemas:
+
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: Newly generated access token.
+        token_type:
+          type: string
+          example: bearer
+        expires_in:
+          type: integer
+          description: Access token validity in seconds.
+        refresh_token:
+          type: string
+          description: New refresh token (old one is immediately invalidated).
+        access_token_expiry:
+          type: number
+          description: Epoch timestamp (ms) when the access token expires.
+        refresh_token_expiry:
+          type: number
+          description: Epoch timestamp (ms) when the refresh token expires.
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid access token.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string, example: Unauthorized }
+    BadRequest:
+      description: Invalid request body or parameters.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string }
+              message: { type: string }
+
+# ─── Paths ────────────────────────────────────────────────────────────────────
+paths:
+
+  # ── Validate Token ────────────────────────────────────────────────────────────
+  # Real URL: GET https://stagingstores.xoxoday.com/chef/v1/oauth/token
+
+  /token:
+    get:
+      operationId: validateTokenStorefront
+      summary: Validate Token
+      description: >
+        Validate whether the current `access_token` is still active.
+        Pass the Bearer token in the `Authorization` header.
+      tags: [Authentication]
+      responses:
+        "200":
+          description: Token is valid.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    description: The validated access token.
+                  token_type:
+                    type: string
+                    description: "Always `bearer`."
+                  expires_in:
+                    type: number
+                    description: Token validity duration in seconds.
+                  access_token_expiry:
+                    type: number
+                    description: Epoch timestamp (ms) when the access token expires.
+                  refresh_token_expiry:
+                    type: number
+                    description: Epoch timestamp (ms) when the refresh token expires.
+              example:
+                access_token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+                token_type: bearer
+                expires_in: 1296000
+                access_token_expiry: 1718000000000
+                refresh_token_expiry: 1720000000000
+        "401": { $ref: '#/components/responses/Unauthorized' }
+
+  # ── Refresh Token ─────────────────────────────────────────────────────────────
+  # Real URL: POST https://stagingstores.xoxoday.com/chef/v1/oauth/token/company
+
+  /token/company:
+    post:
+      operationId: refreshTokenStorefront
+      summary: Refresh Token
+      description: >
+        Get a new access token using your refresh token.
+        Every call issues a brand-new refresh token — the old one is immediately
+        invalidated. Always persist the new refresh token from the response.
+      tags: [Authentication]
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [grant_type, refresh_token, client_id, client_secret]
+              properties:
+                grant_type:
+                  type: string
+                  enum: [refresh_token]
+                  description: Must be `"refresh_token"`.
+                refresh_token:
+                  type: string
+                  description: The existing refresh token used to obtain a new access token.
+                client_id:
+                  type: string
+                  description: Client ID provided to you for authentication.
+                client_secret:
+                  type: string
+                  description: Client secret associated with the client ID.
+            example:
+              grant_type: refresh_token
+              refresh_token: "XXXXXXXXX"
+              client_id: "XXXXXXXXX"
+              client_secret: "XXXXXXXXX"
+      responses:
+        "200":
+          description: New tokens issued successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              example:
+                access_token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+                token_type: bearer
+                expires_in: 1296000
+                refresh_token: "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4..."
+                access_token_expiry: 1718000000000
+                refresh_token_expiry: 1720000000000
+        "401": { $ref: '#/components/responses/Unauthorized' }
+
+  # ── SSO Redirection API ───────────────────────────────────────────────────────
+  # Real URL: POST https://stagingstores.xoxoday.com/chef/v1/oauth/sso/stores/company
+
+  /sso/stores/company:
+    post:
+      operationId: ssoRedirectionStorefront
+      summary: SSO Redirection API
+      description: >
+        Authenticate an end-user into Xoxoday's hosted StoreFront via SSO (SAML 2.0).
+        Returns an `ssoToken` which is appended to the StoreFront redirect URL.
+        If the user account does not exist in Xoxoday, one is created automatically.
+
+
+        **Redirect URL format:**
+        ```
+        https://stagingstores.xoxoday.com/chef/v1/oauth/redirect/stores/{ssoToken}
+        ```
+
+        Replace `stagingstores.xoxoday.com` with `stores.xoxoday.com` for production.
+        The `ssoToken` is valid for **14 days**.
+      tags: [SSO]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [user_input, tpd]
+              properties:
+                user_input:
+                  type: string
+                  format: email
+                  description: End user's email address. Used to create or fetch the account in Xoxoday.
+                  example: john.doe@example.com
+                tpd:
+                  type: object
+                  description: Third-party data object containing user identity and authorization details.
+                  required: [auth_token, unique_id]
+                  properties:
+                    auth_token:
+                      type: string
+                      description: >
+                        Token provided by you. Xoxoday will pass this back on subsequent
+                        callback API calls (Get Balance, Get Profile, Refund, Update Redemption).
+                      example: "Your own key"
+                    unique_id:
+                      type: string
+                      description: Unique identifier for the user in your system.
+                      example: "736517181"
+                    email:
+                      type: object
+                      description: Email field configuration for the StoreFront checkout.
+                      properties:
+                        default_value:
+                          type: string
+                          format: email
+                          description: Actual email address of the user.
+                          example: john.doe@example.com
+                        editable:
+                          type: boolean
+                          description: If `false`, the user cannot edit the email at checkout.
+                          example: true
+                        hidden:
+                          type: boolean
+                          description: If `true`, the email field is hidden at checkout.
+                          example: false
+                        support_alternate:
+                          type: boolean
+                          description: If `false`, no alternate email option is shown.
+                          example: true
+                    phone:
+                      type: object
+                      description: Phone field configuration for the StoreFront checkout.
+                      properties:
+                        default_value:
+                          type: string
+                          description: Phone number of the user.
+                          example: "987654321"
+                        phone_code:
+                          type: string
+                          description: "Country calling code (e.g. `+91`)."
+                          example: "+91"
+                        editable:
+                          type: boolean
+                          description: If `false`, the user cannot edit the phone number at checkout.
+                          example: false
+                        hidden:
+                          type: boolean
+                          description: If `true`, the phone field is hidden at checkout.
+                          example: false
+                    otp:
+                      type: string
+                      enum: [primary_email, primary_phone, alternate_email, none]
+                      description: >
+                        OTP validation mode at checkout.
+                        Use `none` to disable OTP verification.
+                      example: primary_email
+            example:
+              user_input: "john.doe@example.com"
+              tpd:
+                auth_token: "Your own key"
+                unique_id: "736517181"
+                email:
+                  default_value: "john.doe@example.com"
+                  editable: true
+                  hidden: false
+                  support_alternate: true
+                phone:
+                  default_value: "987654321"
+                  phone_code: "+91"
+                  editable: false
+                  hidden: false
+                otp: primary_email
+      responses:
+        "200":
+          description: SSO token generated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      ssoToken:
+                        type: string
+                        description: >
+                          Unique token for redirecting the user into Xoxoday StoreFront.
+                          Append to the redirect URL. Valid for 14 days.
+              example:
+                data:
+                  ssoToken: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "401": { $ref: '#/components/responses/Unauthorized' }

@@ -1,0 +1,591 @@
+openapi: 3.0.3
+
+info:
+  title: Xoxoday Reward Link API
+  version: "1.2"
+  description: |
+    APIs for automating reward distribution via personalized reward links and campaigns.
+
+    **Auth endpoints** resolve against `https://stagingstores.xoxoday.com/chef/v1/oauth`
+    using a per-operation server override.
+
+    **Campaign + Link operations** use `https://stagingstores.xoxoday.com/chef/v1/oauth/api`
+    as the base. `/generateLink` and `/sendLinks` have dedicated real paths.
+    Campaign operations (`/campaignList`, `/campaignDetails`) use short virtual path
+    suffixes because both operations share the same real URL (`/v1/oauth/api`) and
+    OpenAPI does not allow two POST operations on the same path.
+
+servers:
+  - url: https://stagingstores.xoxoday.com/chef/v1/oauth/api
+    description: Sandbox
+
+security:
+  - BearerAuth: []
+
+tags:
+  - name: Authentication
+    description: Token management — validate and refresh access tokens.
+  - name: Campaigns
+    description: Fetch reward link campaigns and their details.
+  - name: Links
+    description: Generate and send reward links to recipients.
+
+# ─── Components ───────────────────────────────────────────────────────────────
+components:
+
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: "`Authorization: Bearer <access_token>`"
+
+  schemas:
+
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+          description: Newly generated access token.
+        token_type:
+          type: string
+          example: bearer
+        expires_in:
+          type: integer
+          description: Access token validity in seconds.
+        refresh_token:
+          type: string
+          description: New refresh token (old one is immediately invalidated).
+        access_token_expiry:
+          type: string
+          description: Epoch timestamp (ms) when the access token expires.
+        refresh_token_expiry:
+          type: string
+          description: Epoch timestamp (ms) when the refresh token expires.
+
+  responses:
+    Unauthorized:
+      description: Missing or invalid access token.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string, example: Unauthorized }
+    BadRequest:
+      description: Invalid request body or parameters.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error: { type: string }
+              message: { type: string }
+    BadGateway:
+      description: Upstream service error.
+
+# ─── Paths ────────────────────────────────────────────────────────────────────
+paths:
+
+  # ── Validate Token ────────────────────────────────────────────────────────────
+  # Real URL: GET https://stagingstores.xoxoday.com/chef/v1/oauth/token
+
+  /token:
+    get:
+      operationId: validateToken
+      summary: Validate Token
+      description: >
+        Validate whether the current `access_token` is still active.
+        Pass the Bearer token in the `Authorization` header.
+      tags: [Authentication]
+      servers:
+        - url: https://stagingstores.xoxoday.com/chef/v1/oauth
+          description: Sandbox
+      responses:
+        "200":
+          description: Token is valid.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                    description: The validated access token.
+                  token_type:
+                    type: string
+                    description: "Always `bearer`."
+                  expires_in:
+                    type: number
+                    description: Token validity duration in seconds.
+                  access_token_expiry:
+                    type: number
+                    description: Epoch timestamp (ms) when the access token expires.
+                  refresh_token_expiry:
+                    type: number
+                    description: Epoch timestamp (ms) when the refresh token expires.
+              example:
+                access_token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+                token_type: bearer
+                expires_in: 1296000
+                access_token_expiry: 1718000000000
+                refresh_token_expiry: 1720000000000
+        "401": { $ref: '#/components/responses/Unauthorized' }
+
+  # ── Refresh Token ─────────────────────────────────────────────────────────────
+  # Real URL: POST https://stagingstores.xoxoday.com/chef/v1/oauth/token/user
+
+  /token/user:
+    post:
+      operationId: refreshToken
+      summary: Refresh Token
+      description: >
+        Get a new access token using your refresh token.
+        Every call issues a brand-new refresh token — the old one is immediately
+        invalidated. Always persist the new refresh token from the response.
+      tags: [Authentication]
+      security: []
+      servers:
+        - url: https://stagingstores.xoxoday.com/chef/v1/oauth
+          description: Sandbox
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [grant_type, refresh_token, client_id, client_secret]
+              properties:
+                grant_type:
+                  type: string
+                  enum: [refresh_token]
+                  description: Must be `"refresh_token"`.
+                refresh_token:
+                  type: string
+                  description: The existing refresh token used to obtain a new access token.
+                client_id:
+                  type: string
+                  description: Client ID provided to you for authentication.
+                client_secret:
+                  type: string
+                  description: Client secret associated with the client ID.
+            example:
+              grant_type: refresh_token
+              refresh_token: "XXXXXXXXX"
+              client_id: "XXXXXXXXX"
+              client_secret: "XXXXXXXXX"
+      responses:
+        "200":
+          description: New tokens issued successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              example:
+                access_token: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+                token_type: bearer
+                expires_in: 1296000
+                refresh_token: "dGhpcyBpcyBhIHJlZnJlc2ggdG9rZW4..."
+                access_token_expiry: "1718000000000"
+                refresh_token_expiry: "1720000000000"
+        "401": { $ref: '#/components/responses/Unauthorized' }
+
+  # ── Get Campaigns ─────────────────────────────────────────────────────────────
+  # Real URL: POST https://stagingstores.xoxoday.com/chef/v1/oauth/api
+  # Virtual path — both campaign operations share the same real URL.
+
+  /campaignList:
+    post:
+      operationId: getCampaigns
+      summary: Get Campaigns API
+      description: >
+        Get the list of all reward link campaigns created from the dashboard.
+        Supports pagination and filtering by name or enabled status.
+
+
+        **Real URL:** `POST https://stagingstores.xoxoday.com/chef/v1/oauth/api`
+      tags: [Campaigns]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  enum: [xoxo_link.query.campaignList]
+                  default: xoxo_link.query.campaignList
+                  description: "Always use `xoxo_link.query.campaignList`."
+                tag:
+                  type: string
+                  enum: [xoxo_link]
+                  default: xoxo_link
+                  description: "Always use `xoxo_link`."
+                variables:
+                  type: object
+                  required: [add_data]
+                  properties:
+                    add_data:
+                      type: object
+                      properties:
+                        limit:
+                          type: integer
+                          description: Number of campaigns to fetch (pagination limit).
+                          example: 10
+                        offset:
+                          type: integer
+                          description: Starting index for pagination.
+                          example: 0
+                        name:
+                          type: string
+                          description: Filter by campaign name. Omit or pass empty string for no filter.
+                        enabled:
+                          type: integer
+                          enum: [0, 1]
+                          description: "Filter by status: `1` = enabled, `0` = disabled."
+                          example: 1
+            example:
+              query: xoxo_link.query.campaignList
+              tag: xoxo_link
+              variables:
+                add_data:
+                  limit: 10
+                  offset: 0
+                  enabled: 1
+      responses:
+        "200":
+          description: Campaign list returned successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      campaignList:
+                        type: object
+                        properties:
+                          success:
+                            type: integer
+                            description: "`1` = success."
+                          data:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                campaignId: { type: integer }
+                                campaignName: { type: string }
+                                denomination_value: { type: number }
+                                countryName: { type: string }
+                                currencyCode: { type: string }
+                                created_date: { type: string }
+                                product_count: { type: number }
+                                status: { type: integer, description: "1 = active, 0 = inactive." }
+              example:
+                data:
+                  campaignList:
+                    success: 1
+                    data:
+                      - campaignId: 2461
+                        campaignName: "Summer Rewards"
+                        denomination_value: 10
+                        countryName: "USA"
+                        currencyCode: "USD"
+                        created_date: "2025-06-01 10:00:00"
+                        product_count: 5
+                        status: 1
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ── Get Campaign Details ───────────────────────────────────────────────────────
+  # Real URL: POST https://stagingstores.xoxoday.com/chef/v1/oauth/api
+  # Virtual path — both campaign operations share the same real URL.
+
+  /campaignDetails:
+    post:
+      operationId: getCampaignDetails
+      summary: Get Campaign Details API
+      description: >
+        Fetch the products/vouchers included in a specific campaign by campaign ID.
+
+
+        **Real URL:** `POST https://stagingstores.xoxoday.com/chef/v1/oauth/api`
+      tags: [Campaigns]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  enum: [xoxo_link.mutation.campaignDetails]
+                  default: xoxo_link.mutation.campaignDetails
+                  description: "Always use `xoxo_link.mutation.campaignDetails`."
+                tag:
+                  type: string
+                  enum: [xoxo_link]
+                  default: xoxo_link
+                  description: "Always use `xoxo_link`."
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      type: object
+                      required: [campaignId]
+                      properties:
+                        campaignId:
+                          type: integer
+                          description: Unique identifier of the campaign to fetch.
+                          example: 123
+            example:
+              query: xoxo_link.mutation.campaignDetails
+              tag: xoxo_link
+              variables:
+                data:
+                  campaignId: 123
+      responses:
+        "200":
+          description: Campaign details returned successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      campaignDetails:
+                        type: object
+                        properties:
+                          success:
+                            type: integer
+                            description: "`1` = success."
+                          data:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                campaignId: { type: integer }
+                                campaignName: { type: string }
+                                denomination_value: { type: number }
+                                currency_code: { type: string }
+                                countryName: { type: string }
+                                vouchers:
+                                  type: array
+                                  items:
+                                    type: object
+                                    properties:
+                                      name: { type: string }
+                                      image: { type: string, description: Image URL for the voucher. }
+              example:
+                data:
+                  campaignDetails:
+                    success: 1
+                    data:
+                      - campaignId: 123
+                        campaignName: "Summer Rewards"
+                        denomination_value: 10
+                        currency_code: "USD"
+                        countryName: "USA"
+                        vouchers:
+                          - name: "Amazon Gift Card"
+                            image: "https://cdn.xoxoday.com/amazon.png"
+                          - name: "Starbucks Gift Card"
+                            image: "https://cdn.xoxoday.com/starbucks.png"
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ── Generate Link ─────────────────────────────────────────────────────────────
+  # Real URL: POST https://stagingstores.xoxoday.com/chef/v1/oauth/api/generateLink
+
+  /generateLink:
+    post:
+      operationId: generateLinks
+      summary: Generate Link API
+      description: >
+        Generate reward links in bulk without needing recipient email addresses.
+        Ideal for reward automation where links are distributed via your own channels.
+      tags: [Links]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  enum: [xoxo_link.mutation.generateLink]
+                  default: xoxo_link.mutation.generateLink
+                  description: "Always use `xoxo_link.mutation.generateLink`."
+                tag:
+                  type: string
+                  enum: [xoxo_link]
+                  default: xoxo_link
+                  description: "Always use `xoxo_link`."
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      type: object
+                      required: [campaignId, links_quantity, link_expiry]
+                      properties:
+                        campaignId:
+                          type: integer
+                          description: Unique identifier of the campaign.
+                          example: 123
+                        links_quantity:
+                          type: integer
+                          description: Number of links to generate.
+                          example: 1
+                        link_expiry:
+                          type: string
+                          description: "Expiry date for the links. Format: `DD-MM-YYYY`."
+                          example: "19-03-1999"
+            example:
+              query: xoxo_link.mutation.generateLink
+              tag: xoxo_link
+              variables:
+                data:
+                  campaignId: 123
+                  links_quantity: 1
+                  link_expiry: "19-03-1999"
+      responses:
+        "200":
+          description: Links generated successfully.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      generateLink:
+                        type: object
+                        properties:
+                          success: { type: integer, description: "`1` = success." }
+                          message: { type: string }
+                          links:
+                            type: array
+                            description: List of generated reward link URLs.
+                            items: { type: string }
+                          batchId: { type: string }
+                          campaignName: { type: string }
+                          campaignId: { type: string }
+                          denomination_value: { type: number }
+                          countryName: { type: string }
+                          currencyCode: { type: string }
+              example:
+                data:
+                  generateLink:
+                    success: 1
+                    message: "Links generated successfully"
+                    links:
+                      - "https://plum.xoxoday.com/claim/abc123"
+                      - "https://plum.xoxoday.com/claim/def456"
+                    batchId: "batch_20260415_001"
+                    campaignName: "Summer Rewards"
+                    campaignId: "123"
+                    denomination_value: 10
+                    countryName: "USA"
+                    currencyCode: "USD"
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }
+
+  # ── Send Links ────────────────────────────────────────────────────────────────
+  # Real URL: POST https://stagingstores.xoxoday.com/chef/v1/oauth/api/sendLinks
+
+  /sendLinks:
+    post:
+      operationId: sendLinks
+      summary: Send Link API
+      description: >
+        Generate a unique reward link per recipient and deliver it to their inbox.
+        Ideal for automating reward distribution with email notifications.
+      tags: [Links]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query, tag, variables]
+              properties:
+                query:
+                  type: string
+                  enum: [xoxo_link.mutation.generateLinkEmail]
+                  default: xoxo_link.mutation.generateLinkEmail
+                  description: "Always use `xoxo_link.mutation.generateLinkEmail`."
+                tag:
+                  type: string
+                  enum: [xoxo_link]
+                  default: xoxo_link
+                  description: "Always use `xoxo_link`."
+                variables:
+                  type: object
+                  required: [data]
+                  properties:
+                    data:
+                      type: object
+                      required: [campaignId, email_ids, link_expiry]
+                      properties:
+                        campaignId:
+                          type: integer
+                          description: Unique identifier of the campaign.
+                          example: 123
+                        email_ids:
+                          type: string
+                          description: Comma-separated list of recipient email addresses.
+                          example: "email1@domain.com,email2@domain.com"
+                        link_expiry:
+                          type: string
+                          description: "Expiry date for the links. Format: `DD-MM-YYYY`."
+                          example: "19-03-2023"
+            example:
+              query: xoxo_link.mutation.generateLinkEmail
+              tag: xoxo_link
+              variables:
+                data:
+                  campaignId: 123
+                  email_ids: "email1@domain.com,email2@domain.com"
+                  link_expiry: "19-03-2023"
+      responses:
+        "200":
+          description: Links sent successfully to all recipients.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      generateLink:
+                        type: object
+                        properties:
+                          success:
+                            type: integer
+                            description: "`1` = success."
+                          message:
+                            type: string
+              example:
+                data:
+                  generateLink:
+                    success: 1
+                    message: "Links created successfully"
+        "400": { $ref: '#/components/responses/BadRequest' }
+        "401": { $ref: '#/components/responses/Unauthorized' }
+        "502": { $ref: '#/components/responses/BadGateway' }

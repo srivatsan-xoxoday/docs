@@ -1,0 +1,55 @@
+---
+title: "Marketplace API: Integrate Plum's Reward Catalog"
+description: "Use the Plum Marketplace API to embed the reward catalog, check balances, place orders, and handle refunds in your own application."
+sidebarTitle: "About"
+---
+
+The Plum Marketplace API lets you embed Plum's global reward catalog directly into your own application. You can check your account balance, place reward orders programmatically, and initiate refunds—all via a simple REST interface. This is the right API if you want to build a custom redemption experience on top of Plum's catalog.
+
+## What you can do
+
+- **Check balance** — Query your Plum account balance before placing orders
+- **Place orders** — Order from Plum's catalog of gift cards and rewards programmatically
+- **Initiate refunds** — Refund orders that were not fulfilled or were placed in error
+
+## Base URLs
+
+| Environment | Base URL |
+|---|---|
+| Sandbox | `https://canvas.xoxoday.com/chef` |
+| Production | `https://accounts.xoxoday.com/chef` |
+
+## Authentication
+
+All Marketplace API requests require a Bearer access token. Generate one using your Client ID and Secret from the Plum admin portal.
+
+<Note>
+  See the [API Authentication guide](/api-reference/authentication) for step-by-step instructions on obtaining your access token.
+</Note>
+
+## Available endpoints
+
+| Endpoint | Method | Description |
+|---|---|---|
+| `/get-balance` | GET | Retrieve your current account balance |
+| `/place-order` | POST | Place a reward order from the catalog |
+| `/refund` | POST | Initiate a refund for an existing order |
+
+## Use cases
+
+**Custom redemption portals** — Build a branded redemption experience where employees or customers choose rewards from Plum's catalog inside your own app.
+
+**Loyalty platforms** — Integrate Plum as the fulfillment layer for your loyalty program, placing orders when users redeem points.
+
+**Bulk incentive distribution** — Automate reward delivery at scale for marketing campaigns, research panels, or employee recognition programs.
+
+## Next steps
+
+<CardGroup cols={2}>
+  <Card title="Endpoints Reference" icon="code" href="/api-reference/marketplace/endpoints">
+    Full request and response documentation for all Marketplace API endpoints.
+  </Card>
+  <Card title="Authentication" icon="key" href="/api-reference/authentication">
+    Learn how to generate and use your Bearer access token.
+  </Card>
+</CardGroup>

@@ -1,0 +1,168 @@
+---
+title: "Qualtrics and SurveyMonkey Integration"
+description: "Automatically send Plum rewards to SurveyMonkey and Qualtrics survey respondents upon completion—supporting public and anonymous surveys."
+---
+
+Low survey response rates are one of the most common challenges in market research and customer feedback programs. Offering an instant reward upon completion is one of the most effective ways to increase participation. Plum integrates natively with both SurveyMonkey and Qualtrics so you can automate reward delivery the moment a respondent submits their response—without manual tracking or gift code distribution.
+
+Both integrations support:
+
+- **Automated rewards** sent immediately when a survey is completed.
+- **Built-in approval workflows** to review and approve respondents individually or in bulk before rewards are sent.
+- **Customised email templates** with your logo, messaging, and images.
+- **Plum's global catalog** with 5,000\+ experiences, 3,000\+ gift vouchers, and 12,000\+ perks for respondents to choose from.
+- **Reward limits** based on campaign time range, maximum reward count, and repeat rewarding rules.
+
+<Tabs>
+  <Tab title="Qualtrics">
+    ## Qualtrics overview
+
+    Plum's Qualtrics integration uses the Qualtrics Workflow Extension to send rewards automatically when a survey response is submitted. You configure the reward settings—campaign, approval type, expiry, and limits—inside the Qualtrics workflow builder alongside your other survey logic.
+
+    ### Prerequisite: enabling API access
+
+    The user account you connect to Plum must have API access enabled in Qualtrics. Only roles such as Brand Administrator and Account Manager have this permission by default.
+
+    <Steps>
+      <Step title="Go to Admin in Qualtrics">
+        In Qualtrics, select **Admin** from the top dropdown.
+      </Step>
+      <Step title="Open User settings">
+        Click **User** in the header.
+      </Step>
+      <Step title="Enable API access">
+        Click on the email address of the relevant user. In the pop-up that appears, check the **Access API** checkbox and save.
+      </Step>
+    </Steps>
+
+    ### Connecting Qualtrics and Plum
+
+    <Steps>
+      <Step title="Find the Xoxoday extension">
+        In Qualtrics, go to **Admin \> Extensions**. Find the **Xoxoday** extension in the list and click it.
+      </Step>
+      <Step title="Connect your account">
+        Click **Connect Account**. You will be redirected to Plum—log in and click **Allow** to grant the Qualtrics extension access to your account.
+      </Step>
+    </Steps>
+
+    ### Creating a Qualtrics workflow with Plum rewards
+
+    <Steps>
+      <Step title="Open Workflow in Qualtrics">
+        From the main Qualtrics menu, click **Workflow** to open the workflow builder for your survey project.
+      </Step>
+      <Step title="Set up the event trigger">
+        Select **Survey Response** and choose your survey. Click **Start by an Event** and select **Newly created Response** (and **Response via APIs** if applicable).
+      </Step>
+      <Step title="Add a Xoxoday task">
+        Click the **\+** icon to add a Task. Select **Xoxoday** from the available extensions and choose your connected Xoxoday account.
+      </Step>
+      <Step title="Configure reward settings">
+        In the task configuration, set the following:
+
+        - **Reward campaign** — select from campaigns in your Plum account.
+        - **Approval Required** — choose Yes for manual approval, or No to send rewards automatically.
+        - **Reward Expiry** — set how long respondents have to claim.
+        - **Date range** — define when the automation is active.
+        - **Maximum Reward count** — the maximum number of rewards for this survey.
+        - **Repeat Rewarding** — toggle on if you want to allow the same email to be rewarded more than once.
+
+        Click **Save** and then **Next**.
+      </Step>
+      <Step title="Map the email address field">
+        In the next step, map the survey question that collects the respondent's email address. Select **Survey Question** from the dropdown, then select the specific question. This email address will be used to deliver the reward.
+      </Step>
+    </Steps>
+
+    <Tip>
+      Make sure your survey includes a question that explicitly collects the respondent's email address. If no such question exists, add one before setting up the automation—Plum uses this field to deliver the reward.
+    </Tip>
+  </Tab>
+  <Tab title="SurveyMonkey">
+    ## SurveyMonkey overview
+
+    Plum's SurveyMonkey integration connects the two platforms so that every respondent who completes a qualifying survey automatically receives a reward. You do not need to manually export response data or distribute gift codes—Plum handles the entire fulfillment process.
+
+    ### Prerequisites
+
+    Before setting up survey automations, make sure you have:
+
+    - Connected Plum to SurveyMonkey (see the setup steps below).
+    - Created at least one reward campaign in your Plum account.
+    - Sufficient wallet balance in Plum to cover the rewards you plan to send.
+
+    ### Installing the integration
+
+    <Steps>
+      <Step title="Go to the SurveyMonkey App Marketplace">
+        In SurveyMonkey, navigate to the **App Marketplace** and search for **Xoxoday Plum**.
+      </Step>
+      <Step title="Install the app">
+        Click **Install** to connect Xoxoday Plum with your SurveyMonkey account.
+      </Step>
+      <Step title="Sign in or create a Plum account">
+        You will be redirected to the Plum registration page. Log in with your existing credentials or create a new account. Fill in your company name, currency, tax ID, and password.
+      </Step>
+    </Steps>
+
+    ### Public survey automation
+
+    Public survey automation is for surveys where respondents identify themselves—for example, surveys sent via email collector with known respondent details.
+
+    <Info>
+      Only respondents who are part of an Email Collector in SurveyMonkey are eligible to redeem rewards. Respondents who access the survey by web link without being part of an email collector will not have access.
+    </Info>
+
+    <Steps>
+      <Step title="Create a new automation">
+        In your Plum SurveyMonkey integration dashboard, click **Create New Automation** and select the **Public** option.
+      </Step>
+      <Step title="Select a survey">
+        Choose the SurveyMonkey survey you want to attach rewards to. To collect respondent email addresses for reward delivery, either select an existing email question from the survey or let Plum add a new email question at the end of the survey.
+      </Step>
+      <Step title="Configure reward settings">
+        Select the reward campaign, set the link expiry date, choose **Manual** or **Automatic** approval, and optionally configure an automation date range and a maximum reward count.
+      </Step>
+      <Step title="Save and launch">
+        Click **Save and Launch** and confirm. Once launched, automation settings cannot be changed.
+      </Step>
+    </Steps>
+
+    ### Anonymous survey automation
+
+    Anonymous survey automation works for surveys where respondents do not provide identifying information up front. In this flow, Plum generates a reward claim URL that you place on the survey's end page. When a respondent finishes the survey, they are redirected to the reward claim page where they can enter their email address to receive the reward.
+
+    <Steps>
+      <Step title="Create an anonymous automation">
+        Click **Create New Automation** and select the **Anonymous** option.
+      </Step>
+      <Step title="Accept the guidelines">
+        Read and accept the guidelines covering how anonymous rewarding works, then click **Continue**.
+      </Step>
+      <Step title="Configure reward settings">
+        Select the survey, set Manual or Automatic approval, and configure start/end dates and a reward limit as needed.
+      </Step>
+      <Step title="Save and launch">
+        Click **Save and Launch** and confirm. Note that settings cannot be changed once the automation is live.
+      </Step>
+      <Step title="Add the reward URL to the survey end page">
+        Copy the reward claim URL from the automation detail page. In SurveyMonkey, open the Email Collector for your survey, click **Options**, and select **Survey End Page**. Choose **Redirect to a URL** and paste the reward URL. Now, when a respondent completes the survey, they are redirected to the Plum claim page.
+      </Step>
+      <Step title="Refresh the email collector as needed">
+        If you add new email collectors to the survey after launching the automation, click **Refresh Email Collector** in the automation detail page to bring in new collectors and make their respondents eligible for rewards.
+      </Step>
+    </Steps>
+  </Tab>
+</Tabs>
+
+## Tracking and reporting
+
+Both the SurveyMonkey and Qualtrics integrations provide a reward report inside Plum where you can monitor:
+
+- The number of rewards triggered and sent.
+- Redemption status for each respondent.
+- Active and inactive automations.
+- Campaign time range and remaining reward budget.
+
+Navigate to **Manage Integrations \> SurveyMonkey** or **Qualtrics** in your Plum admin dashboard to access the automation detail page for each campaign.

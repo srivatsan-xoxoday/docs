@@ -1,0 +1,147 @@
+---
+title: "User Management"
+description: "Learn how to add, remove, and configure admin users in Plum, including Super Admin vs. Admin privileges and the Maker–Checker workflow."
+---
+
+Plum supports two admin roles—Super Admin and Admin—so you can delegate access to colleagues while maintaining control over sensitive account actions. This page covers how to invite and remove admins, adjust spending thresholds, understand the Maker–Checker governance model, switch between accounts, and update your own profile.
+
+<Note>
+  When you first sign up for Plum, your account is automatically assigned the Super Admin role. You have full control from day one.
+</Note>
+
+## Roles and privileges
+
+Super Admins have unrestricted access to all account features. Admins can perform day-to-day operational tasks but are restricted from sensitive financial and configuration actions.
+
+| Feature | Super Admin | Admin |
+| --- | --- | --- |
+| Recharge company account | Yes | No |
+| Spending (withdrawal) limit | Unlimited | Restricted by threshold |
+| Access to reports | All reports | Self-reports only; company-level reports restricted |
+| Maker–Checker capabilities | Can act as Maker or Checker | Can act as Maker or Checker |
+| Self-approval | Not permitted | Not permitted |
+| Campaign creation | Yes | Yes |
+| Add or remove admins | Yes | No |
+| Update spending thresholds | Yes | No |
+| Switch admin role (Admin ↔ Super Admin) | Yes | No |
+
+## Add an admin user
+
+You can invite a colleague by email and assign them either the Admin or Super Admin role directly from **Settings**.
+
+<Steps>
+  <Step title="Go to Settings > Admins">
+    In the main dashboard navigation, click **Settings**, then select **Admins**. You can see all existing admins and super admins, along with each admin's threshold amount.
+  </Step>
+  <Step title="Fill in the invitation details">
+    Enter the new user's **Name**, **Email**, and **Threshold Amount**, then select their **Role** (Admin or Super Admin).
+  </Step>
+  <Step title="Send the invitation">
+    Click **Add Admin**. The invited user receives an email to access the account.
+  </Step>
+</Steps>
+
+## Change an admin's role
+
+Only Super Admins can promote an Admin to Super Admin (or demote in reverse).
+
+<Steps>
+  <Step title="Go to Settings > Admins">
+    Navigate to **Settings \> Admins** in the dashboard.
+  </Step>
+  <Step title="Open the actions menu">
+    Click the three-dot menu (**...**) in the **Actions** column next to the user you want to change.
+  </Step>
+  <Step title="Select the new role">
+    Click **Change to Super Admin** (or **Change to Admin**, as needed).
+  </Step>
+  <Step title="Confirm the change">
+    Click **Yes** in the confirmation prompt.
+  </Step>
+</Steps>
+
+## Remove an admin user
+
+Removing an admin immediately revokes their access to the Plum account.
+
+<Steps>
+  <Step title="Go to Settings > Admins">
+    Navigate to **Settings \> Admins** in the dashboard.
+  </Step>
+  <Step title="Open the actions menu">
+    Click the three-dot menu (**...**) in the **Actions** column next to the user you want to remove.
+  </Step>
+  <Step title="Delete the admin">
+    Click **Delete Admin**.
+  </Step>
+  <Step title="Confirm the deletion">
+    Click **Yes, Delete** in the confirmation prompt. The user is immediately removed from the account.
+  </Step>
+</Steps>
+
+## Maker–Checker workflow
+
+Plum enforces a Maker–Checker governance model for critical changes to catalogs and campaigns. This two-person approval process ensures no single user can unilaterally make sensitive configuration changes.
+
+- The **Maker** initiates an action (for example, modifying a campaign or catalog).
+- The **Checker** reviews and approves or rejects the change.
+
+<Warning>
+  Self-approval is strictly prohibited. Even if an admin holds both Maker and Checker roles, they cannot approve their own actions. A different user must act as Checker for any change the same person initiated as Maker.
+</Warning>
+
+## Manage spending thresholds
+
+A threshold is a hard budget limit that restricts how much an Admin can spend from the company wallet. Super Admins have no threshold by default.
+
+<Steps>
+  <Step title="Go to Settings > Admins">
+    Navigate to **Settings \> Admins**.
+  </Step>
+  <Step title="Open the actions menu">
+    Click the three-dot menu (**...**) next to the admin whose threshold you want to update, then select **Update Threshold Limit**.
+  </Step>
+  <Step title="Set the new amount">
+    Enter the desired threshold value in the prompt that appears, then click **Update**.
+  </Step>
+</Steps>
+
+<Info>
+  Thresholds apply only to Admin users. Super Admins can always access the full company wallet balance without restriction. You can set individual thresholds per Admin to align with their team's budget.
+</Info>
+
+## Switch between accounts
+
+If you are associated with more than one Plum account, you can switch between them without logging out.
+
+<Steps>
+  <Step title="Open your profile menu">
+    Click the **Profile icon** in the top-right corner of the dashboard.
+  </Step>
+  <Step title="Select Switch Account">
+    Click **Switch Account** from the dropdown menu.
+  </Step>
+  <Step title="Choose the account">
+    Select the account you want to switch to from the list. The dashboard reloads with the selected account's data.
+  </Step>
+</Steps>
+
+## Update your profile and password
+
+You can update your display name and password from the profile menu at any time.
+
+<Steps>
+  <Step title="Open your profile menu">
+    Click the **Profile icon** in the top-right corner of the dashboard.
+  </Step>
+  <Step title="Edit your details">
+    Update your **Name** and/or **Password** in the profile settings panel.
+  </Step>
+  <Step title="Save your changes">
+    Save the form to apply your changes immediately.
+  </Step>
+</Steps>
+
+<Info>
+  You can only change your name and password from the profile panel. To update your email address or other account details, contact [cs@xoxoday.com](mailto:cs@xoxoday.com).
+</Info>

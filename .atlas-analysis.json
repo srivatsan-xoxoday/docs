@@ -1,0 +1,146 @@
+{
+  "projectType": "saas",
+  "projectName": "Plum by Xoxoday",
+  "projectDescription": "Plum is a rewards and incentives platform that enables businesses to send, manage, and automate gift cards, reward links, and reward points to employees and customers.",
+  "theme": "almond",
+  "primaryColor": "#0c0c14",
+  "lightColor": "#ffffff",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Help Center",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "getting-started/overview",
+              "getting-started/signing-up",
+              "getting-started/for-end-users"
+            ]
+          },
+          {
+            "group": "Campaigns",
+            "pages": [
+              "campaigns/overview",
+              "campaigns/reward-link-campaign",
+              "campaigns/reward-code-campaign",
+              "campaigns/manage-campaigns"
+            ]
+          },
+          {
+            "group": "Account Administration",
+            "pages": [
+              "account/user-management",
+              "account/reporting",
+              "account/payments-wallet"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "integrations/overview",
+              "integrations/hubspot",
+              "integrations/salesforce",
+              "integrations/zoho-crm",
+              "integrations/surveymonkey-qualtrics",
+              "integrations/zapier",
+              "integrations/other-integrations"
+            ]
+          },
+          {
+            "group": "Security & Compliance",
+            "pages": [
+              "security/overview",
+              "security/data-privacy",
+              "security/certifications"
+            ]
+          },
+          {
+            "group": "FAQs",
+            "pages": [
+              "faqs/campaigns",
+              "faqs/integrations",
+              "faqs/account-management"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api-reference/overview",
+              "api-reference/authentication",
+              "api-reference/usage-guidelines",
+              "api-reference/error-handling"
+            ]
+          },
+          {
+            "group": "Gift Cards API",
+            "pages": [
+              "api-reference/gift-cards/about",
+              "api-reference/gift-cards/authentication",
+              "api-reference/gift-cards/place-order",
+              "api-reference/gift-cards/webhooks"
+            ]
+          },
+          {
+            "group": "Reward Points API",
+            "pages": [
+              "api-reference/reward-points/about",
+              "api-reference/reward-points/authentication",
+              "api-reference/reward-points/endpoints"
+            ]
+          },
+          {
+            "group": "Reward Link API",
+            "pages": [
+              "api-reference/reward-link/about",
+              "api-reference/reward-link/authentication",
+              "api-reference/reward-link/endpoints"
+            ]
+          },
+          {
+            "group": "Perks & Marketplace API",
+            "pages": [
+              "api-reference/perks/about",
+              "api-reference/perks/authentication",
+              "api-reference/marketplace/about",
+              "api-reference/marketplace/endpoints"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Send gift cards, reward links, and reward points to employees and customers",
+    "Create and manage customizable reward campaigns",
+    "Native integrations with HubSpot, Salesforce, Zoho CRM, SurveyMonkey, Qualtrics, and more",
+    "Reward automation via Zapier and workflow-based triggers",
+    "Global reward storefront with thousands of brands",
+    "Prepaid virtual cards (Visa, PayPal)",
+    "Detailed reporting: API reports, reward code/link reports, payment and wallet reports",
+    "Role-based access control with Maker-Checker governance",
+    "ISO 27001, SOC 2, and CSA certified infrastructure",
+    "REST APIs: Gift Cards, Reward Points, Reward Link, Perks, and Marketplace"
+  ],
+  "publicApiSurface": [
+    "GET /get-filters — Retrieve catalog filters (Gift Cards API)",
+    "POST /place-order — Place a gift card order (Gift Cards API)",
+    "GET /get-order-details — Fetch order details (Gift Cards API)",
+    "GET /get-payment-report — Retrieve payment report (Gift Cards API)",
+    "GET /get-vouchers — Fetch voucher details (Gift Cards API)",
+    "POST /send-link — Send a reward link (Reward Link API)",
+    "GET /validate-token — Validate an access token",
+    "POST /refresh-token — Refresh an access token",
+    "GET /fetch-offers — Retrieve available perks/offers (Perks API)",
+    "GET /fetch-points — Fetch reward points balance (Reward Points API)",
+    "POST /send-points — Send reward points (Reward Points API)",
+    "GET /get-balance — Get account balance (Marketplace API)",
+    "POST /refund — Initiate a refund (Marketplace API)"
+  ]
+}

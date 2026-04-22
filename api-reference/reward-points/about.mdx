@@ -1,0 +1,38 @@
+---
+title: "Reward Points API: Send and Manage Points"
+description: "The Plum Reward Points API lets you send points balances to users, fetch balances, and create user tokens from your company token."
+sidebarTitle: "About"
+---
+
+The Reward Points API lets you integrate Plum's points-based reward system into your own platform. Using your company-level OAuth token, you can create user-scoped tokens that allow you to check individual points balances and send points directly to users. This API is ideal for organizations that run internal points programs—such as employee recognition initiatives, sales incentive schemes, or loyalty programs—and need to manage point allocations and distributions programmatically.
+
+## What you can do with the Reward Points API
+
+- **Create user tokens**: Exchange your company-level access token for a user-scoped token, enabling you to perform operations on behalf of a specific user.
+- **Fetch points balance**: Check the current Plum Points balance for any user in your account.
+- **Send points**: Transfer points from your company account to individual users, triggering reward allocations automatically.
+
+## How it works
+
+The Reward Points API operates on a two-token model:
+
+1. **Company token**: Your organization's OAuth 2.0 access token, generated from your Client ID and Secret via the standard authorization flow. This token scopes requests to your company's account.
+2. **User token**: A derived token created by calling `POST /create-user-token` with the company token. User tokens allow you to perform actions on behalf of a specific user in your platform.
+
+All API requests must be made using credentials from a Super Admin account. Ensure your API credentials carry the appropriate access level before integrating.
+
+## Available endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/create-user-token` | Create a user-scoped token from your company token |
+| GET | `/fetch-points` | Retrieve the Plum Points balance for a user |
+| POST | `/send-points` | Send Plum Points to a user |
+
+## Get started
+
+See the [Authentication guide](/api-reference/reward-points/authentication) to generate your company access token, then visit the [Endpoints reference](/api-reference/reward-points/endpoints) for full request and response documentation.
+
+<Note>
+  The full Reward Points API reference is available at [developers.xoxoday.com/reference](https://developers.xoxoday.com/reference).
+</Note>

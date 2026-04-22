@@ -1,0 +1,95 @@
+---
+title: "API Error Codes and Troubleshooting for Plum"
+description: "Reference guide for Plum API HTTP status codes and JSON error responses, with step-by-step guidance on handling 401, 429, 5xx, and stock errors."
+---
+
+Plum APIs use standard HTTP status codes to communicate the outcome of every request. A `2xx` code means the request succeeded. A `4xx` code means there was a problem with your request. A `5xx` code means something went wrong on Plum's side. In addition to the HTTP status, error responses include a JSON body with more detail.
+
+## HTTP status codes
+
+| Status Code | Name | Description |
+|-------------|------|-------------|
+| `200` | OK | The request succeeded. Check the response body for result details. |
+| `400` | Bad Request | The request was malformed or missing required parameters. Inspect the `message` field in the response for details. |
+| `401` | Unauthorized | The access token is missing, invalid, or expired. Regenerate your token and retry. |
+| `403` | Forbidden | Your credentials are valid but you do not have permission to access the requested resource. |
+| `404` | Not Found | The requested resource (order, product, campaign, etc.) does not exist. |
+| `429` | Too Many Requests | You have exceeded the rate limit of 5,000 requests per second. Back off and retry after a delay. |
+| `500` | Internal Server Error | An unexpected error occurred on Plum's servers. |
+| `502` | Bad Gateway | Plum's upstream service returned an invalid response. |
+| `503` | Service Unavailable | The service is temporarily unavailable. Retry after a short delay. |
+
+## Error response format
+
+All error responses return a JSON body with the following structure:
+
+```json
+{
+  "status": 0,
+  "message": "A human-readable description of the error",
+  "code": "PLE10024"
+}
+```
+
+The `status` field is `0` for errors and `1` for success. The `code` field contains a Plum-specific error code when available.
+
+## Plum-specific error codes
+
+| Code | Description |
+|------|-------------|
+| `PLE10024` | Vouchers are out of stock. Retry after the inventory is replenished (up to 7 business days for some products). |
+
+## Handling 5xx errors on order placement
+
+If you receive a `5xx` response from `POST /place-order`, do **not** assume the order failed. Follow this process before retrying:
+
+<Steps>
+  <Step title="Query the order by poNumber">
+    Call `GET /get-order-details` with the `poNumber` you sent in the original request.
+  </Step>
+  <Step title="Check whether an order exists">
+    If the response contains an order record, the order was created successfully despite the error. Use the returned `orderID` for tracking.
+  </Step>
+  <Step title="Retry only if no order exists">
+    If no order is found for your `poNumber`, it is safe to retry the `POST /place-order` request using the same `poNumber`.
+  </Step>
+</Steps>
+
+<Warning>
+  Never issue a retry with a new `poNumber` before checking `GET /get-order-details`. Doing so can result in duplicate orders.
+</Warning>
+
+## Handling 401 Unauthorized
+
+A `401` response means your access token has expired or is invalid. Tokens are valid for 15 days. To resolve:
+
+1. Attempt to refresh your token using your refresh token (valid for 30 days).
+2. If the refresh token has also expired, restart the full OAuth authorization flow.
+3. Update the `Authorization` header in your requests with the new access token.
+
+<Tip>
+  Proactively refresh your access token before it expires by tracking the `access_token_expiry` value returned when you first generate a token.
+</Tip>
+
+## Handling 429 Too Many Requests
+
+The Plum platform enforces a limit of 5,000 requests per second per client. If you hit this limit:
+
+1. Stop sending new requests immediately.
+2. Wait for the interval indicated in the `Retry-After` response header (if present).
+3. Resume requests with an exponential backoff strategy—start with a 1-second wait and double it with each consecutive `429` response, up to a maximum delay.
+
+## Handling out-of-stock responses
+
+When the `PLE10024` error code appears, the requested voucher is temporarily out of stock. Plum runs a replenishment check every 30 minutes. For popular brands, restock can take up to 7 business days. In this scenario:
+
+- Do not retry the order immediately.
+- Notify the end user that the item is temporarily unavailable.
+- Subscribe to Plum's catalog update emails (delivered to Super Admin) to learn when availability is restored.
+
+## Debugging tips
+
+- **Log every request and response.** Store the full request payload, response body, HTTP status, and timestamp for every API call. This is essential for resolving disputes and diagnosing intermittent failures.
+- **Use the sandbox environment** to reproduce errors safely without real-world impact.
+- **Check timestamps in IST.** Plum returns timestamps in Indian Standard Time (IST, UTC+5:30) by default. Convert to your local timezone when storing records.
+- **Contact support.** If you encounter a persistent error you cannot resolve, reach out to your Plum implementation manager and provide the environment, API endpoint, request payload, error response, and timestamp.

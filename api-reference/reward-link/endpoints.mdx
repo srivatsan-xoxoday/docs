@@ -1,0 +1,283 @@
+---
+title: "Reward Link API Endpoints Reference"
+description: "API reference for Plum's Reward Link endpoints: send-link, get-link-status, and resend-link—with request and response schemas."
+sidebarTitle: "Endpoints"
+---
+
+The Reward Link API provides endpoints for sending XoxoLinks to recipients, monitoring redemption status, and resending links when needed. All endpoints require a valid Bearer token, your Client ID, and your Secret ID in the request headers. Authenticate before calling these endpoints—see the [Authentication guide](/api-reference/reward-link/authentication) for details.
+
+---
+
+## POST /send-link
+
+Generates a XoxoLink and sends it to the specified recipient. The recipient receives a shareable URL they can open to browse the Plum reward catalog and choose their preferred reward.
+
+**Production URL:** `https://accounts.xoxoday.com/chef/v1/oauth/api/send-link`
+
+**Sandbox URL:** `https://canvas.xoxoday.com/chef/v1/oauth/api/send-link`
+
+### Request headers
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| `Authorization` | Yes | `Bearer YOUR_ACCESS_TOKEN` |
+| `X-Api-Key` | Yes | Your Client ID |
+| `X-Secret-Key` | Yes | Your Secret ID |
+| `Content-Type` | Yes | `application/json` |
+
+### Request body parameters
+
+<ParamField body="recipientEmail" type="string" required>
+  Email address of the reward link recipient.
+</ParamField>
+
+<ParamField body="recipientName" type="string" required>
+  Full name of the recipient. Used to personalize the delivery email.
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Reward value to load onto the link, in your account's base currency.
+</ParamField>
+
+<ParamField body="currency" type="string" required>
+  ISO 4217 currency code for the reward amount (e.g., `USD`, `GBP`, `INR`).
+</ParamField>
+
+<ParamField body="campaignId" type="string" required>
+  Identifier of the campaign or reward configuration under which this link is issued. Obtain this from `GET /get-campaigns`.
+</ParamField>
+
+<ParamField body="referenceId" type="string" required>
+  Your unique reference identifier for this link send event. Use a UUID. Store this alongside the returned `linkId` for tracking.
+</ParamField>
+
+<ParamField body="expiryDays" type="integer">
+  Number of days before the link expires. Defaults to the campaign-level expiry setting if not specified.
+</ParamField>
+
+<ParamField body="message" type="string">
+  Optional personalized message to include in the delivery email.
+</ParamField>
+
+<ParamField body="notifyViaEmail" type="boolean">
+  Set to `true` (default) to deliver the link via email. Set to `false` if you intend to distribute the link yourself.
+</ParamField>
+
+### Example request
+
+```bash
+curl -X POST https://accounts.xoxoday.com/chef/v1/oauth/api/send-link \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "X-Api-Key: YOUR_CLIENT_ID" \
+  -H "X-Secret-Key: YOUR_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "recipientEmail": "jane@example.com",
+    "recipientName": "Jane Smith",
+    "amount": 50,
+    "currency": "USD",
+    "campaignId": "CAMP_001",
+    "referenceId": "ref-uuid-abcd-1234",
+    "expiryDays": 30,
+    "message": "Thank you for your hard work this quarter!",
+    "notifyViaEmail": true
+  }'
+```
+
+### Example response
+
+```json
+{
+  "status": 1,
+  "message": "Reward link sent successfully",
+  "data": {
+    "linkId": "LINK_20240101_001",
+    "referenceId": "ref-uuid-abcd-1234",
+    "rewardLink": "https://plum.xoxoday.com/redeem/abc123xyz",
+    "recipientEmail": "jane@example.com",
+    "amount": 50,
+    "currency": "USD",
+    "expiresAt": "2024-01-31T23:59:59.000Z",
+    "status": "sent"
+  }
+}
+```
+
+### Response fields
+
+<ResponseField name="status" type="integer">
+  `1` for success, `0` for failure.
+</ResponseField>
+
+<ResponseField name="data.linkId" type="string">
+  Plum's unique identifier for this reward link. Use it to call `get-link-status` or `resend-link`.
+</ResponseField>
+
+<ResponseField name="data.referenceId" type="string">
+  Your reference ID echoed back for confirmation.
+</ResponseField>
+
+<ResponseField name="data.rewardLink" type="string">
+  The XoxoLink URL the recipient uses to choose and redeem their reward.
+</ResponseField>
+
+<ResponseField name="data.amount" type="number">
+  Reward value loaded on the link.
+</ResponseField>
+
+<ResponseField name="data.expiresAt" type="string">
+  ISO 8601 timestamp when the link expires.
+</ResponseField>
+
+<ResponseField name="data.status" type="string">
+  Current status of the link: `sent`, `opened`, `redeemed`, or `expired`.
+</ResponseField>
+
+---
+
+## GET /get-link-status
+
+Retrieves the current redemption status of a previously sent reward link.
+
+**Production URL:** `https://accounts.xoxoday.com/chef/v1/oauth/api/get-link-status`
+
+**Sandbox URL:** `https://canvas.xoxoday.com/chef/v1/oauth/api/get-link-status`
+
+### Request headers
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| `Authorization` | Yes | `Bearer YOUR_ACCESS_TOKEN` |
+| `X-Api-Key` | Yes | Your Client ID |
+| `X-Secret-Key` | Yes | Your Secret ID |
+
+### Query parameters
+
+<ParamField query="linkId" type="string" required>
+  The unique link identifier returned by `POST /send-link`.
+</ParamField>
+
+### Example request
+
+```bash
+curl -X GET "https://accounts.xoxoday.com/chef/v1/oauth/api/get-link-status?linkId=LINK_20240101_001" \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "X-Api-Key: YOUR_CLIENT_ID" \
+  -H "X-Secret-Key: YOUR_CLIENT_SECRET"
+```
+
+### Example response
+
+```json
+{
+  "status": 1,
+  "message": "Link status retrieved",
+  "data": {
+    "linkId": "LINK_20240101_001",
+    "recipientEmail": "jane@example.com",
+    "amount": 50,
+    "currency": "USD",
+    "linkStatus": "redeemed",
+    "redeemedAt": "2024-01-05T14:30:00.000Z",
+    "redeemedProductName": "Starbucks Gift Card",
+    "expiresAt": "2024-01-31T23:59:59.000Z"
+  }
+}
+```
+
+### Response fields
+
+<ResponseField name="data.linkId" type="string">
+  The reward link identifier.
+</ResponseField>
+
+<ResponseField name="data.linkStatus" type="string">
+  Current status: `sent`, `opened`, `redeemed`, or `expired`.
+</ResponseField>
+
+<ResponseField name="data.redeemedAt" type="string">
+  ISO 8601 timestamp of when the link was redeemed. Null if not yet redeemed.
+</ResponseField>
+
+<ResponseField name="data.redeemedProductName" type="string">
+  Name of the product the recipient chose when redeeming. Null if not yet redeemed.
+</ResponseField>
+
+<ResponseField name="data.expiresAt" type="string">
+  ISO 8601 timestamp when the link expires.
+</ResponseField>
+
+---
+
+## POST /resend-link
+
+Resends an existing reward link to the original recipient. Use this when a recipient did not receive the initial email or when you need to remind them about an unredeemed link.
+
+**Production URL:** `https://accounts.xoxoday.com/chef/v1/oauth/api/resend-link`
+
+**Sandbox URL:** `https://canvas.xoxoday.com/chef/v1/oauth/api/resend-link`
+
+### Request headers
+
+| Header | Required | Description |
+|--------|----------|-------------|
+| `Authorization` | Yes | `Bearer YOUR_ACCESS_TOKEN` |
+| `X-Api-Key` | Yes | Your Client ID |
+| `X-Secret-Key` | Yes | Your Secret ID |
+| `Content-Type` | Yes | `application/json` |
+
+### Request body parameters
+
+<ParamField body="linkId" type="string" required>
+  The unique link identifier of the reward link you want to resend.
+</ParamField>
+
+<ParamField body="message" type="string">
+  Optional updated message to include in the resent email.
+</ParamField>
+
+### Example request
+
+```bash
+curl -X POST https://accounts.xoxoday.com/chef/v1/oauth/api/resend-link \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN" \
+  -H "X-Api-Key: YOUR_CLIENT_ID" \
+  -H "X-Secret-Key: YOUR_CLIENT_SECRET" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "linkId": "LINK_20240101_001",
+    "message": "Reminder: your reward is waiting for you!"
+  }'
+```
+
+### Example response
+
+```json
+{
+  "status": 1,
+  "message": "Reward link resent successfully",
+  "data": {
+    "linkId": "LINK_20240101_001",
+    "resentAt": "2024-01-10T09:00:00.000Z",
+    "recipientEmail": "jane@example.com"
+  }
+}
+```
+
+### Response fields
+
+<ResponseField name="data.linkId" type="string">
+  The reward link identifier that was resent.
+</ResponseField>
+
+<ResponseField name="data.resentAt" type="string">
+  ISO 8601 timestamp of when the link was resent.
+</ResponseField>
+
+<ResponseField name="data.recipientEmail" type="string">
+  Email address the link was resent to.
+</ResponseField>
+
+<Note>
+  You cannot resend a link that has already been redeemed or has expired. Check the link status using `GET /get-link-status` before resending.
+</Note>

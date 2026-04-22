@@ -1,0 +1,45 @@
+---
+title: "Reward Link API: Send Shareable Reward Links"
+description: "Use Plum's Reward Link (XoxoLink) API to programmatically send reward links to recipients who can choose from thousands of rewards."
+sidebarTitle: "About"
+---
+
+The Reward Link API—also referred to as the XoxoLink API—lets you programmatically send shareable reward links to recipients. Rather than choosing a specific gift card or reward on behalf of the recipient, you send them a link that lets them browse and select their own reward from Plum's full catalog of thousands of products across brands, categories, and geographies. This choice-based approach increases recipient satisfaction and reduces the administrative overhead of managing individual voucher orders.
+
+## What you can do with the Reward Link API
+
+- **Send reward links**: Generate and deliver a personalized XoxoLink to any recipient via email or SMS.
+- **Check link status**: Retrieve the redemption status of a sent link to see whether it has been opened, redeemed, or is still pending.
+- **Resend links**: Resend a previously sent link if the recipient did not receive it or the link has expired.
+- **Validate tokens**: Confirm that your access token is valid before initiating reward link operations.
+
+## How it works
+
+1. You call `POST /send-link` with the recipient's details, the campaign or reward configuration, and an amount.
+2. Plum generates a unique XoxoLink and delivers it to the recipient.
+3. The recipient opens the link and browses the Plum catalog to choose their preferred reward.
+4. You can monitor redemption progress using `GET /get-link-status`.
+
+## Supported use cases
+
+- **Employee recognition**: Let employees choose their own reward from thousands of options.
+- **Customer incentives**: Send post-purchase or referral rewards that recipients redeem at their convenience.
+- **Survey and research incentives**: Distribute reward links as incentives for survey participants.
+- **Event and milestone rewards**: Automate link delivery for work anniversaries, birthdays, or performance milestones.
+
+## Available endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/validate-token` | Validate your access token |
+| POST | `/send-link` | Send a reward link to a recipient |
+| GET | `/get-link-status` | Get the redemption status of a sent link |
+| POST | `/resend-link` | Resend a previously sent reward link |
+
+## Get started
+
+See the [Authentication guide](/api-reference/reward-link/authentication) to set up your credentials, then visit the [Endpoints reference](/api-reference/reward-link/endpoints) for full request and response documentation.
+
+<Note>
+  The full interactive Reward Link API reference is available at [developers.xoxoday.com/reference/overview-1](https://developers.xoxoday.com/reference/overview-1).
+</Note>
